@@ -312,3 +312,35 @@ it works intro renders as written. One mobile element screenshot showed the
 first card blank; a viewport re-check with a user-like scroll showed it
 rendering at opacity 1 with the reveal class applied, so the blank was a
 capture artifact of the stitched element screenshot, not a defect.
+
+## Factory UI round (18 Nov 2026, afternoon WAT)
+
+The vault app moved to the factory model. A vault bar above the panels
+lets the viewer pick the demo vault or one of their own vaults (read from
+`SpendGuardFactory.vaultsOf`), with a Create vault button that submits
+`createVault()` and selects the new vault on confirmation. The demo vault
+is badged DEMO with a plain line that its funds belong to the demo, and a
+connected user with vaults lands on their first own vault unless a stored
+choice says otherwise (selection persists in localStorage). The hero and
+stat strip still show the demo vault. All panel writes take the selected
+vault address; the data hook takes the vault address and scan start block
+(demo: deploy block 3461010; own vaults: factory block 3488645) and carries
+a generation guard so a scan started for one vault can never write another
+vault's sessions after a switch. Deposit is owner-gated in the UI with a
+demo-specific hint for non-owners. The grant form gained a three-item
+warning box (lost key, wrong address, grants cannot be edited). The inline
+revoke confirm was replaced by a custom pop-up: backdrop, session facts,
+three consequences, Keep this key (focused) and Revoke key; it closes on
+Escape, backdrop click, or a failed revoke so the error stays visible.
+
+Verified with a Playwright script against the Pages export served locally
+under `/Spendguard`, live RPC through a Node fetch proxy, and a mock
+injected wallet: 41 checks pass across disconnected desktop, owner,
+stranger, and 390px mobile runs. The owner run proved vault switching
+(demo 2.65 tUSD8, own vault 0.50 tUSD8 with empty sessions), the modal
+contents and Escape close, and the create-vault call (to the factory
+address, bare `createVault()` selector `0x5d12928b`, nothing broadcast).
+The stranger run proved deposit and grant gating. Zero horizontal overflow
+and zero page errors in all four runs. Screenshots in `verification/`:
+factory-desktop-disconnected, factory-owner-yourvault, factory-revoke-modal,
+factory-mobile-bar, factory-mobile-modal.

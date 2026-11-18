@@ -32,10 +32,18 @@ export const FAUCET_URL = "https://faucet.qday.info/en";
 export const REPO_URL = "https://github.com/Admuad/Spendguard";
 export const DORAHACKS_URL = "https://dorahacks.io/hackathon/qday/detail";
 
-// Deployed SpendGuard vault (18 Nov 2026). Deploy tx:
+// The demo vault shown on the homepage (18 Nov 2026). Deploy tx:
 // 0xbe573e67a296cab6bacb5cfb1cfe91bef681171037db06e4383d7caa666536d3
+// User vaults are created through the factory below; this address is the
+// project's own vault, labelled as a demo in the UI.
 export const VAULT_ADDRESS =
   "0x9a113999851e446a7ab516472e2dae743fc2a0ca" as const;
+// SpendGuardFactory (18 Nov 2026). Deploy tx:
+// 0xffe969563226c2dbca58cc2c67a9ad7bba19e8b7977de29eaddb85a8417c7dcc
+export const FACTORY_ADDRESS =
+  "0x54c6ac3e1e63a1354f4b602435bfc09c9731bd2f" as const;
+/** Block the factory was deployed in. User-vault event scans start here. */
+export const FACTORY_DEPLOY_BLOCK = 3488645n;
 export const TUSD8_ADDRESS =
   "0x456569838f1d43009A91ebA4263147Afd7233483" as const;
 export const TUSD8_DECIMALS = 6;
@@ -97,6 +105,19 @@ export const spendGuardAbi = parseAbi([
   "error PerTxLimitExceeded()",
   "error CallerNotSessionKey()",
   "error InsufficientVaultBalance()",
+]);
+
+// ---------------------------------------------------------------------------
+// SpendGuardFactory ABI. Mirrors src/SpendGuardFactory.sol exactly.
+// ---------------------------------------------------------------------------
+export const factoryAbi = parseAbi([
+  "function token() view returns (address)",
+  "function createVault() returns (address)",
+  "function vaultsOf(address owner) view returns (address[])",
+  "function vaultCount() view returns (uint256)",
+  "function allVaults(uint256 index) view returns (address)",
+  "event VaultCreated(address indexed owner, address indexed vault, uint256 index)",
+  "error ZeroAddress()",
 ]);
 
 /** Minimal ERC-20 surface the UI needs (approve / allowance / balance). */

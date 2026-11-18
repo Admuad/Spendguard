@@ -36,7 +36,7 @@ export default function Home() {
         <StatsBand />
         <Bento />
         <SetupGuide />
-        <VaultApp vault={vault} />
+        <VaultApp />
         <HowItWorks />
         <Faq />
         <CtaBanner onWatchDemo={() => setDemoOpen(true)} />

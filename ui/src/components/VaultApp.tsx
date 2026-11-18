@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useAccount, useConnect, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { injected } from "wagmi/connectors";
 import type { Address } from "viem";
 import {
+  DEPLOY_BLOCK,
+  FACTORY_ADDRESS,
+  FACTORY_DEPLOY_BLOCK,
   FAUCET_URL,
   TUSD8_ADDRESS,
   VAULT_ADDRESS,
@@ -13,6 +16,7 @@ import {
   erc20Abi,
   explorerAddressUrl,
   explorerTxUrl,
+  factoryAbi,
   spendGuardAbi,
 } from "@/lib/config";
 import {
@@ -27,7 +31,7 @@ import {
   shortenAddress,
 } from "@/lib/format";
 import type { SessionState, VaultData } from "@/lib/useVaultData";
-import { useWalletTokenData } from "@/lib/useVaultData";
+import { useMyVaults, useVaultData, useWalletTokenData } from "@/lib/useVaultData";
 
 /** Legacy transactions: the starter-kit docs warn some tooling mishandles
  * EIP-1559 fields on this chain, and the vault itself was deployed legacy. */
@@ -190,11 +194,15 @@ function ConnectPrompt({ action }: { action: string }) {
 // ---------------------------------------------------------------------------
 function DepositPanel({
   vault,
+  vaultAddress,
+  isOwner,
   tokenBalance,
   allowance,
   refreshTokenData,
 }: {
   vault: VaultData;
+  vaultAddress: Address;
+  isOwner: boolean;
   tokenBalance: bigint | null;
   allowance: bigint | null;
   refreshTokenData: () => void;
@@ -224,10 +232,44 @@ function DepositPanel({
       <div className="panel">
         <h3>Deposit tUSD8</h3>
         <p className="panel-desc">
-          Fund the vault. Anyone can deposit; depositing can only increase the
-          balance, never decrease it.
+          Only the vault owner can deposit from this page. Connect the owner
+          wallet to fund this vault.
         </p>
         <ConnectPrompt action="deposit" />
+      </div>
+    );
+  }
+
+  if (!isOwner) {
+    const viewingDemo = vaultAddress.toLowerCase() === VAULT_ADDRESS.toLowerCase();
+    return (
+      <div className="panel">
+        <h3>Deposit tUSD8</h3>
+        <p className="panel-desc">
+          Depositing is owner-only. The connected wallet is not the vault
+          owner, so the deposit form is disabled for this account.
+        </p>
+        <div className="empty-state">
+          Only the vault owner can deposit into this vault.{" "}
+          {viewingDemo ? (
+            <>
+              This is the demo vault, owned by the project. Create your own
+              vault from the bar above to fund a vault you own.
+            </>
+          ) : (
+            <>
+              The vault owner is{" "}
+              {vault.owner ? (
+                <a href={explorerAddressUrl(vault.owner)} target="_blank" rel="noreferrer">
+                  {shortenAddress(vault.owner)}
+                </a>
+              ) : (
+                "loading…"
+              )}
+              .
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -286,7 +328,7 @@ function DepositPanel({
               address: TUSD8_ADDRESS,
               abi: erc20Abi,
               functionName: "approve",
-              args: [VAULT_ADDRESS, parsed],
+              args: [vaultAddress, parsed],
             })
           }
         >
@@ -302,7 +344,7 @@ function DepositPanel({
           onClick={() =>
             parsed &&
             depositFlow.submit({
-              address: VAULT_ADDRESS,
+              address: vaultAddress,
               abi: spendGuardAbi,
               functionName: "deposit",
               args: [parsed],
@@ -348,7 +390,7 @@ const EXPIRY_PRESETS = [
   { label: "30 days", seconds: 30 * 24 * 3600 },
 ] as const;
 
-function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) {
+function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
   const { isConnected } = useAccount();
   const [sessionKey, setSessionKey] = useState("");
   const [recipients, setRecipients] = useState("");
@@ -589,6 +631,25 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
         </p>
       ))}
 
+      <div className="warn-box" aria-label="Risks to know before granting">
+        <h4>Know the risks before you grant</h4>
+        <ul>
+          <li>
+            If the key holder loses the key, the grant cannot be used. The
+            funds stay in the vault. Revoke the session and grant a fresh one.
+          </li>
+          <li>
+            Check the key address twice. A grant to the wrong address gives
+            spending power to whoever controls that address. The only fix is
+            to revoke and re-grant.
+          </li>
+          <li>
+            A grant cannot be edited. To change any bound, revoke it and grant
+            a new session. The new session starts with zero spent.
+          </li>
+        </ul>
+      </div>
+
       <button
         type="button"
         className="btn btn-primary btn-block"
@@ -596,7 +657,7 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
         onClick={() => {
           if (!formValid || expiresAt === null || parsedMax === null || parsedCap === null) return;
           grantFlow.submit({
-            address: VAULT_ADDRESS,
+            address: vaultAddress,
             abi: spendGuardAbi,
             functionName: "grantSession",
             args: [
@@ -622,14 +683,113 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
 }
 
 // ---------------------------------------------------------------------------
+// Revoke confirmation: a custom pop-up, never a toast. Revoking an active
+// key is the one destructive owner action, so the consequences are spelled
+// out and the safe choice is the focused default.
+// ---------------------------------------------------------------------------
+function RevokeConfirmModal({
+  session,
+  now,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  session: SessionState;
+  now: number;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onCancel]);
+
+  const expired = Number(session.expiresAt) * 1000 <= now;
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Revoke session key confirmation"
+      onClick={onCancel}
+    >
+      <div className="modal modal-narrow" onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="modal-close" onClick={onCancel} aria-label="Close">
+          ×
+        </button>
+        <h3>Revoke this session key?</h3>
+        <p>
+          This key is still active. Revoking takes effect the moment the
+          transaction is mined.
+        </p>
+        <div className="confirm-box">
+          <div className="confirm-row">
+            <span>Key</span>
+            <span>{shortenAddress(session.key)}</span>
+          </div>
+          <div className="confirm-row">
+            <span>Spent</span>
+            <span>
+              {formatTusd8(session.spent)} of {formatTusd8(session.spendCap)} tUSD8
+            </span>
+          </div>
+          <div className="confirm-row">
+            <span>Remaining cap</span>
+            <span>{formatTusd8(session.remainingCap)} tUSD8</span>
+          </div>
+          <div className="confirm-row">
+            <span>Status</span>
+            <span>{expired ? "Expired" : "Active"}</span>
+          </div>
+        </div>
+        <ul className="modal-warnings">
+          <li>The key stops spending immediately. Any agent using it is cut off.</li>
+          <li>The remaining cap is gone. The funds stay in the vault, untouched.</li>
+          <li>
+            You can grant this address a fresh session later. A fresh grant
+            starts with zero spent.
+          </li>
+        </ul>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-outline" onClick={onCancel} autoFocus>
+            Keep this key
+          </button>
+          <button type="button" className="btn btn-danger" disabled={busy} onClick={onConfirm}>
+            {busy ? "Revoking…" : "Revoke key"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Sessions: every key ever granted, with live state and one-click revoke.
 // ---------------------------------------------------------------------------
-function SessionsPanel({ vault, isOwner, now }: { vault: VaultData; isOwner: boolean; now: number }) {
+function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData; vaultAddress: Address; isOwner: boolean; now: number }) {
   const [revoking, setRevoking] = useState<string | null>(null);
   const revokeFlow = useWriteFlow(() => {
     vault.refresh();
     setRevoking(null);
   });
+  // A failed revoke closes the pop-up so the plain-language error in the
+  // panel is visible instead of sitting behind the modal.
+  useEffect(() => {
+    if (revokeFlow.phase === "error") setRevoking(null);
+  }, [revokeFlow.phase]);
+  const revokingSession =
+    revoking === null
+      ? null
+      : (vault.sessions.find((s) => s.key.toLowerCase() === revoking) ?? null);
 
   return (
     <div className="panel panel-wide">
@@ -654,18 +814,7 @@ function SessionsPanel({ vault, isOwner, now }: { vault: VaultData; isOwner: boo
             session={session}
             isOwner={isOwner}
             now={now}
-            revoking={revoking === session.key.toLowerCase()}
             onAskRevoke={() => setRevoking(session.key.toLowerCase())}
-            onCancelRevoke={() => setRevoking(null)}
-            onConfirmRevoke={() =>
-              revokeFlow.submit({
-                address: VAULT_ADDRESS,
-                abi: spendGuardAbi,
-                functionName: "revokeSession",
-                args: [session.key],
-              })
-            }
-            revokeBusy={revokeFlow.phase === "signing" || revokeFlow.phase === "confirming"}
           />
         ))
       )}
@@ -676,6 +825,22 @@ function SessionsPanel({ vault, isOwner, now }: { vault: VaultData; isOwner: boo
         errorMessage={revokeFlow.errorMessage}
         successLabel="Session revoked. The key can never spend again."
       />
+      {revokingSession !== null && (
+        <RevokeConfirmModal
+          session={revokingSession}
+          now={now}
+          busy={revokeFlow.phase === "signing" || revokeFlow.phase === "confirming"}
+          onCancel={() => setRevoking(null)}
+          onConfirm={() =>
+            revokeFlow.submit({
+              address: vaultAddress,
+              abi: spendGuardAbi,
+              functionName: "revokeSession",
+              args: [revokingSession.key],
+            })
+          }
+        />
+      )}
     </div>
   );
 }
@@ -684,20 +849,12 @@ function SessionRow({
   session,
   isOwner,
   now,
-  revoking,
   onAskRevoke,
-  onCancelRevoke,
-  onConfirmRevoke,
-  revokeBusy,
 }: {
   session: SessionState;
   isOwner: boolean;
   now: number;
-  revoking: boolean;
   onAskRevoke: () => void;
-  onCancelRevoke: () => void;
-  onConfirmRevoke: () => void;
-  revokeBusy: boolean;
 }) {
   const expired = Number(session.expiresAt) * 1000 <= now;
   const status = !session.active ? "Revoked" : expired ? "Expired" : "Active";
@@ -761,26 +918,9 @@ function SessionRow({
       </div>
       {isOwner && session.active && (
         <div className="session-actions">
-          {revoking ? (
-            <div className="inline-confirm" style={{ marginTop: 0 }}>
-              <span>Revoke this key immediately? It can never spend again.</span>
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                disabled={revokeBusy}
-                onClick={onConfirmRevoke}
-              >
-                {revokeBusy ? "Revoking…" : "Yes, revoke"}
-              </button>
-              <button type="button" className="btn btn-outline btn-sm" onClick={onCancelRevoke}>
-                Keep it
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="btn btn-outline btn-sm" onClick={onAskRevoke}>
-              Revoke session
-            </button>
-          )}
+          <button type="button" className="btn btn-outline btn-sm" onClick={onAskRevoke}>
+            Revoke session
+          </button>
         </div>
       )}
     </div>
@@ -792,10 +932,12 @@ function SessionRow({
 // ---------------------------------------------------------------------------
 function AgentPanel({
   vault,
+  vaultAddress,
   mySession,
   now,
 }: {
   vault: VaultData;
+  vaultAddress: Address;
   mySession: SessionState | null;
   now: number;
 }) {
@@ -955,7 +1097,7 @@ function AgentPanel({
         onClick={() => {
           if (!canPay || parsed === null) return;
           payFlow.submit({
-            address: VAULT_ADDRESS,
+            address: vaultAddress,
             abi: spendGuardAbi,
             functionName: "executePayment",
             args: [address, recipient as Address, parsed],
@@ -977,7 +1119,7 @@ function AgentPanel({
 // ---------------------------------------------------------------------------
 // Owner controls: pause / unpause / sweep. Pause never blocks the sweep.
 // ---------------------------------------------------------------------------
-function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) {
+function OwnerPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
   const { isConnected } = useAccount();
   const [confirmingSweep, setConfirmingSweep] = useState(false);
   const [lastPauseAction, setLastPauseAction] = useState<"pause" | "unpause" | null>(null);
@@ -1049,7 +1191,7 @@ function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
             onClick={() => {
               setLastPauseAction("unpause");
               pauseFlow.submit({
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: spendGuardAbi,
                 functionName: "unpause",
               });
@@ -1067,7 +1209,7 @@ function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
             onClick={() => {
               setLastPauseAction("pause");
               pauseFlow.submit({
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: spendGuardAbi,
                 functionName: "pause",
               });
@@ -1092,7 +1234,7 @@ function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
               disabled={busy}
               onClick={() =>
                 sweepFlow.submit({
-                  address: VAULT_ADDRESS,
+                  address: vaultAddress,
                   abi: spendGuardAbi,
                   functionName: "ownerWithdraw",
                 })
@@ -1299,16 +1441,175 @@ function MobileActionBar({
 // ---------------------------------------------------------------------------
 // The vault app section: network banner + all panels.
 // ---------------------------------------------------------------------------
-export function VaultApp({ vault }: { vault: VaultData }) {
+// ---------------------------------------------------------------------------
+// Vault selection: the demo vault plus the connected wallet's own vaults.
+// The demo vault is always badged and explained; a connected user lands on
+// their own vault (or a create-your-vault prompt) instead of the demo.
+// ---------------------------------------------------------------------------
+
+const SELECTED_VAULT_KEY = "spendguard-selected-vault";
+
+function VaultBar({
+  selected,
+  isDemo,
+  myVaults,
+  isConnected,
+  vaultOwner,
+  onSelect,
+  onCreate,
+  createBusy,
+  createPhase,
+  createHash,
+  createError,
+}: {
+  selected: Address;
+  isDemo: boolean;
+  myVaults: readonly Address[];
+  isConnected: boolean;
+  vaultOwner: Address | null;
+  onSelect: (vault: Address) => void;
+  onCreate: () => void;
+  createBusy: boolean;
+  createPhase: TxPhase;
+  createHash: `0x${string}` | undefined;
+  createError: string | null;
+}) {
+  // A stored selection from another wallet is still a real vault: show it
+  // as a pill so the bar never shows nothing selected.
+  const extraVault =
+    !isDemo && !myVaults.some((v) => v.toLowerCase() === selected.toLowerCase())
+      ? selected
+      : null;
+
+  return (
+    <div className="vault-bar">
+      <div className="vault-bar-row">
+        <span className="vault-bar-label">Viewing</span>
+        <div className="vault-pills" role="group" aria-label="Choose a vault">
+          <button
+            type="button"
+            className={`vault-pill${isDemo ? " active" : ""}`}
+            aria-pressed={isDemo}
+            onClick={() => onSelect(VAULT_ADDRESS)}
+          >
+            Demo vault
+          </button>
+          {myVaults.map((vaultAddr, i) => (
+            <button
+              type="button"
+              key={vaultAddr}
+              className={`vault-pill${selected.toLowerCase() === vaultAddr.toLowerCase() ? " active" : ""}`}
+              aria-pressed={selected.toLowerCase() === vaultAddr.toLowerCase()}
+              onClick={() => onSelect(vaultAddr)}
+            >
+              {myVaults.length > 1 ? `Your vault ${i + 1} · ` : "Your vault · "}
+              {shortenAddress(vaultAddr)}
+            </button>
+          ))}
+          {extraVault !== null && (
+            <button type="button" className="vault-pill active" aria-pressed="true">
+              Vault · {shortenAddress(extraVault)}
+            </button>
+          )}
+        </div>
+        {isConnected && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            disabled={createBusy}
+            onClick={onCreate}
+          >
+            {createBusy ? "Creating…" : "+ Create vault"}
+          </button>
+        )}
+      </div>
+      <p className="vault-context">
+        {isDemo ? (
+          <>
+            <span className="demo-badge">Demo</span> This is the project&apos;s
+            demo vault. Its funds belong to the demo, not to you. Create your
+            own vault to manage your own funds, or explore this one read-only.
+            Vault{" "}
+            <a href={explorerAddressUrl(selected)} target="_blank" rel="noreferrer">
+              {shortenAddress(selected)}
+            </a>
+            {vaultOwner !== null && (
+              <>
+                {" "}· Owner{" "}
+                <a href={explorerAddressUrl(vaultOwner)} target="_blank" rel="noreferrer">
+                  {shortenAddress(vaultOwner)}
+                </a>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            Your vault. You own it: only you can deposit, grant keys, pause,
+            and withdraw. The demo vault stays separate. Vault{" "}
+            <a href={explorerAddressUrl(selected)} target="_blank" rel="noreferrer">
+              {shortenAddress(selected)}
+            </a>
+          </>
+        )}
+      </p>
+      {!isConnected && (
+        <p className="vault-context">
+          Connect a wallet to create your own vault. Until then you are
+          viewing the demo vault.
+        </p>
+      )}
+      <TxStatus
+        phase={createPhase}
+        hash={createHash}
+        errorMessage={createError}
+        successLabel="Vault created. You are now viewing your new vault."
+      />
+    </div>
+  );
+}
+
+export function VaultApp() {
   const { address, isConnected, chainId } = useAccount();
   const { switchChain, isPending: isSwitching, error: switchError, reset: resetSwitch } = useSwitchChain();
   const [now, setNow] = useState(() => Date.now());
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("deposit");
+  const { vaults: myVaults, refresh: refreshMyVaults } = useMyVaults(address);
+  const [selected, setSelected] = useState<Address>(() => {
+    if (typeof window === "undefined") return VAULT_ADDRESS;
+    const stored = window.localStorage.getItem(SELECTED_VAULT_KEY);
+    return stored !== null && isValidAddress(stored) ? (stored as Address) : VAULT_ADDRESS;
+  });
+  const [picked, setPicked] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, []);
+
+  // First visit with a connected wallet that owns vaults: open the first own
+  // vault, unless a stored choice or an explicit pick says otherwise.
+  useEffect(() => {
+    if (picked || !isConnected || myVaults.length === 0) return;
+    if (window.localStorage.getItem(SELECTED_VAULT_KEY) !== null) return;
+    setSelected(myVaults[0]);
+  }, [picked, isConnected, myVaults]);
+
+  const selectVault = useCallback((vaultAddr: Address) => {
+    setPicked(true);
+    setSelected(vaultAddr);
+    window.localStorage.setItem(SELECTED_VAULT_KEY, vaultAddr);
+  }, []);
+
+  const isDemo = selected.toLowerCase() === VAULT_ADDRESS.toLowerCase();
+  const vault = useVaultData(selected, isDemo ? DEPLOY_BLOCK : FACTORY_DEPLOY_BLOCK);
+  const { tokenBalance, allowance, refreshTokenData } = useWalletTokenData(address, selected);
+
+  const createFlow = useWriteFlow(async () => {
+    const list = await refreshMyVaults();
+    if (list.length > 0) selectVault(list[list.length - 1]);
+  });
+  const createBusy =
+    createFlow.phase === "signing" || createFlow.phase === "confirming";
 
   const wrongChain = isConnected && chainId !== aevumTestnet.id;
   const isOwner =
@@ -1317,18 +1618,18 @@ export function VaultApp({ vault }: { vault: VaultData }) {
     address != null
       ? (vault.sessions.find((s) => s.key.toLowerCase() === address.toLowerCase()) ?? null)
       : null;
-  const { tokenBalance, allowance, refreshTokenData } = useWalletTokenData(address);
 
   return (
     <section className="section app-section" id="app">
       <div className="container">
         <div className="section-head">
-          <span className="eyebrow eyebrow-dark">Live vault</span>
+          <span className="eyebrow eyebrow-dark">Live vaults</span>
           <h2 className="section-title">Use the vault</h2>
           <p className="section-sub">
-            Everything below talks to the deployed contract on Aevum testnet.
-            Reads are live without a wallet; writes need a connected wallet on
-            chain 44005, and every revert is explained in plain language.
+            Start with the demo vault, or connect a wallet and create your own
+            vault. Reads are live without a wallet; writes need a connected
+            wallet on chain 44005, and every revert is explained in plain
+            language.
           </p>
         </div>
 
@@ -1356,6 +1657,26 @@ export function VaultApp({ vault }: { vault: VaultData }) {
           </div>
         )}
 
+        <VaultBar
+          selected={selected}
+          isDemo={isDemo}
+          myVaults={myVaults}
+          isConnected={isConnected}
+          vaultOwner={vault.owner}
+          onSelect={selectVault}
+          onCreate={() =>
+            createFlow.submit({
+              address: FACTORY_ADDRESS,
+              abi: factoryAbi,
+              functionName: "createVault",
+            })
+          }
+          createBusy={createBusy}
+          createPhase={createFlow.phase}
+          createHash={createFlow.hash}
+          createError={createFlow.errorMessage}
+        />
+
         {!isConnected && <MobileConnectPrompt />}
 
         <div className="vault-segments" role="group" aria-label="Vault panels">
@@ -1378,14 +1699,16 @@ export function VaultApp({ vault }: { vault: VaultData }) {
         <div className="app-grid" data-mobile-panel={mobilePanel}>
           <DepositPanel
             vault={vault}
+            vaultAddress={selected}
+            isOwner={isOwner}
             tokenBalance={tokenBalance}
             allowance={allowance}
             refreshTokenData={refreshTokenData}
           />
-          <GrantPanel vault={vault} isOwner={isOwner} />
-          <AgentPanel vault={vault} mySession={mySession} now={now} />
-          <OwnerPanel vault={vault} isOwner={isOwner} />
-          <SessionsPanel vault={vault} isOwner={isOwner} now={now} />
+          <GrantPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
+          <AgentPanel vault={vault} vaultAddress={selected} mySession={mySession} now={now} />
+          <OwnerPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
+          <SessionsPanel vault={vault} vaultAddress={selected} isOwner={isOwner} now={now} />
         </div>
       </div>
       <MobileActionBar

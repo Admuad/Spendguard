@@ -2,10 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Log } from "viem";
 import {
   DEPLOY_BLOCK,
+  FACTORY_ADDRESS,
   MAX_LOG_RANGE,
   TUSD8_ADDRESS,
   VAULT_ADDRESS,
   erc20Abi,
+  factoryAbi,
   readClient,
   spendGuardAbi,
 } from "./config";
@@ -83,13 +85,13 @@ export type VaultData = {
 const POLL_MS = 20_000;
 
 /** Fetch logs in ≤1,000-block chunks (Aevum's eth_getLogs limit). */
-async function getLogsChunked(from: bigint, to: bigint): Promise<Log[]> {
+async function getLogsChunked(from: bigint, to: bigint, address: `0x${string}`): Promise<Log[]> {
   const logs: Log[] = [];
   let cursor = from;
   while (cursor <= to) {
     const end = cursor + MAX_LOG_RANGE - 1n > to ? to : cursor + MAX_LOG_RANGE - 1n;
     const chunk = await readClient.getLogs({
-      address: VAULT_ADDRESS,
+      address,
       fromBlock: cursor,
       toBlock: end,
     });
@@ -175,7 +177,10 @@ function decodeWithAbi(log: Log): VaultActivity | null {
  * ≤1,000 blocks per call. After the first full scan, only new blocks are
  * fetched on each poll.
  */
-export function useVaultData(): VaultData {
+export function useVaultData(
+  vaultAddress: `0x${string}` = VAULT_ADDRESS,
+  fromBlock: bigint = DEPLOY_BLOCK,
+): VaultData {
   const [balance, setBalance] = useState<bigint | null>(null);
   const [paused, setPaused] = useState<boolean | null>(null);
   const [owner, setOwner] = useState<`0x${string}` | null>(null);
@@ -186,40 +191,64 @@ export function useVaultData(): VaultData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const vaultRef = useRef(vaultAddress);
+  const runRef = useRef(0);
   const scannedThroughRef = useRef<bigint | null>(null);
   const activityRef = useRef<VaultActivity[]>([]);
   const keysRef = useRef<Set<string>>(new Set());
   const refreshKeyRef = useRef(0);
 
   const load = useCallback(async () => {
+    // A load that started for another vault (or an older run) must never
+    // write its results after a newer load has begun: switching vaults
+    // mid-scan would otherwise flash the old vault's sessions.
+    const myRun = ++runRef.current;
+    const myVault = vaultAddress;
+    const stale = () => runRef.current !== myRun || vaultRef.current !== myVault;
+    // Switching vaults resets every cache so the old vault's sessions and
+    // activity never flash on the new vault's screen.
+    if (vaultRef.current !== vaultAddress) {
+      vaultRef.current = vaultAddress;
+      scannedThroughRef.current = null;
+      activityRef.current = [];
+      keysRef.current = new Set();
+      setBalance(null);
+      setPaused(null);
+      setOwner(null);
+      setSessions([]);
+      setActivity([]);
+      setLoading(true);
+    }
     try {
       const [latest, vaultBalance, isPaused, vaultOwner] = await Promise.all([
         readClient.getBlockNumber(),
         readClient.readContract({
-          address: VAULT_ADDRESS,
+          address: vaultAddress,
           abi: spendGuardAbi,
           functionName: "vaultBalance",
         }),
         readClient.readContract({
-          address: VAULT_ADDRESS,
+          address: vaultAddress,
           abi: spendGuardAbi,
           functionName: "paused",
         }),
         readClient.readContract({
-          address: VAULT_ADDRESS,
+          address: vaultAddress,
           abi: spendGuardAbi,
           functionName: "owner",
         }),
       ]);
+      if (stale()) return;
       setBalance(vaultBalance);
       setPaused(isPaused);
       setOwner(vaultOwner);
 
       const from = scannedThroughRef.current === null
-        ? DEPLOY_BLOCK
+        ? fromBlock
         : scannedThroughRef.current + 1n;
       if (from <= latest) {
-        const logs = await getLogsChunked(from, latest);
+        const logs = await getLogsChunked(from, latest, vaultAddress);
+        if (stale()) return;
         scannedThroughRef.current = latest;
         const fresh: VaultActivity[] = [];
         for (const log of logs) {
@@ -248,13 +277,13 @@ export function useVaultData(): VaultData {
           const results = await readClient.multicall({
             contracts: keys.flatMap((key) => [
               {
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: spendGuardAbi,
                 functionName: "getSession",
                 args: [key],
               } as const,
               {
-                address: VAULT_ADDRESS,
+                address: vaultAddress,
                 abi: spendGuardAbi,
                 functionName: "remainingCap",
                 args: [key],
@@ -274,13 +303,13 @@ export function useVaultData(): VaultData {
             try {
               const [session, remaining] = await Promise.all([
                 readClient.readContract({
-                  address: VAULT_ADDRESS,
+                  address: vaultAddress,
                   abi: spendGuardAbi,
                   functionName: "getSession",
                   args: [key],
                 }),
                 readClient.readContract({
-                  address: VAULT_ADDRESS,
+                  address: vaultAddress,
                   abi: spendGuardAbi,
                   functionName: "remainingCap",
                   args: [key],
@@ -356,6 +385,7 @@ export function useVaultData(): VaultData {
         next.sort(
           (a, b) => grantOrder.indexOf(a.key.toLowerCase()) - grantOrder.indexOf(b.key.toLowerCase()),
         );
+        if (stale()) return;
         setSessions(next);
       }
 
@@ -363,12 +393,12 @@ export function useVaultData(): VaultData {
       setPaymentsCount(activityRef.current.filter((a) => a.kind === "payment").length);
       setError(null);
     } catch (err) {
-      setError("Live data could not be refreshed. Showing the last known state.");
+      if (!stale()) setError("Live data could not be refreshed. Showing the last known state.");
       void err;
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
-  }, []);
+  }, [vaultAddress, fromBlock]);
 
   useEffect(() => {
     void load();
@@ -384,12 +414,14 @@ export function useVaultData(): VaultData {
   return { balance, paused, owner, sessions, activity, grantsCount, paymentsCount, loading, error, refresh };
 }
 
-/** The connected wallet's own tUSD8 balance + vault allowance (polling). */
-export function useWalletTokenData(address: `0x${string}` | undefined) {
+/** The connected wallet's own tUSD8 balance + allowance for one vault (polling). */
+export function useWalletTokenData(address: `0x${string}` | undefined, spender: `0x${string}` = VAULT_ADDRESS) {
   const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
   const [allowance, setAllowance] = useState<bigint | null>(null);
+  const runRef = useRef(0);
 
   const load = useCallback(async () => {
+    const myRun = ++runRef.current;
     if (!address) {
       setTokenBalance(null);
       setAllowance(null);
@@ -407,15 +439,16 @@ export function useWalletTokenData(address: `0x${string}` | undefined) {
           address: TUSD8_ADDRESS,
           abi: erc20Abi,
           functionName: "allowance",
-          args: [address, VAULT_ADDRESS],
+          args: [address, spender],
         }),
       ]);
+      if (runRef.current !== myRun) return;
       setTokenBalance(bal);
       setAllowance(allow);
     } catch {
       // Leave the last known values in place; the forms stay usable.
     }
-  }, [address]);
+  }, [address, spender]);
 
   useEffect(() => {
     void load();
@@ -424,4 +457,45 @@ export function useWalletTokenData(address: `0x${string}` | undefined) {
   }, [load]);
 
   return { tokenBalance, allowance, refreshTokenData: load };
+}
+
+/** Vaults owned by one address, read from the factory registry. Refreshed
+ * on demand (after creating a vault); only the owner can add to their own
+ * list, so no polling is needed. Returns the list so callers can act on
+ * the fresh value immediately after a refresh. */
+export function useMyVaults(ownerAddress: `0x${string}` | undefined) {
+  const [vaults, setVaults] = useState<`0x${string}`[]>([]);
+  const vaultsRef = useRef<`0x${string}`[]>([]);
+  const runRef = useRef(0);
+
+  const load = useCallback(async (): Promise<`0x${string}`[]> => {
+    const myRun = ++runRef.current;
+    if (!ownerAddress) {
+      vaultsRef.current = [];
+      setVaults([]);
+      return [];
+    }
+    try {
+      const list = await readClient.readContract({
+        address: FACTORY_ADDRESS,
+        abi: factoryAbi,
+        functionName: "vaultsOf",
+        args: [ownerAddress],
+      });
+      if (runRef.current !== myRun) return vaultsRef.current;
+      const next = [...list] as `0x${string}`[];
+      vaultsRef.current = next;
+      setVaults(next);
+      return next;
+    } catch {
+      // Keep the last known list; a failed read must not blank the switcher.
+      return vaultsRef.current;
+    }
+  }, [ownerAddress]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return { vaults, refresh: load };
 }
