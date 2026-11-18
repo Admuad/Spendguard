@@ -1183,7 +1183,11 @@ summary:focus-visible,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
+  /* Stretch, not start: panels in a row share one height, so the grid
+     stays put when a panel's content grows or shrinks (connecting,
+     creating a vault, warnings appearing). With start alignment each
+     panel sized to its own content and the rows looked scattered. */
+  align-items: stretch;
 }
 
 .panel {

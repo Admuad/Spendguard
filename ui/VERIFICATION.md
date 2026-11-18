@@ -542,3 +542,20 @@ suites all green: factory-verify, labels-chips-verify, edit-verify,
 and the mobile Claude-corrections checklist. Screenshots in
 `verification/`: steps-after-1440/768/390, howitworks-after-1440,
 vaultbar-after-1440/390, vaultbar-after-390-disconnected.
+
+## App grid round (18 Nov 2026, evening WAT)
+
+Muhammed reported the vault panels "flying around" after connecting a
+wallet and creating a vault. Cause: `.app-grid` used `align-items:
+start`, so each panel sized to its own content. Rows were ragged, and
+every content change (connecting, forms enabling, warnings appearing,
+sessions arriving) resized panels independently, so siblings shifted
+on their own. Fix: `align-items: stretch`, so panels in a row share
+one height and move together. The single-column mobile layout is
+unaffected (stretch is a no-op there) and the load-bearing panel order
+for the mobile segments is unchanged. Measured in the browser at
+1440px: connected-owner row 1 both panels 1158px, row 2 both 395px;
+disconnected rows both 336px. Regression suites all green:
+factory-verify, labels-chips-verify, edit-verify, and the mobile
+Claude-corrections checklist. Screenshots in `verification/`:
+appgrid-after-1440-owner, appgrid-after-1440-disconnected.
