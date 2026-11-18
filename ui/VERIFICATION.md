@@ -597,3 +597,21 @@ usage-filled-screenshot, and modal-settled. dash-shots and the hero /
 setup scripts stay on the landing page. Screenshots in
 `verification/`: split-app-1440-owner-top/panels, split-app-1440-dark-top,
 split-app-390-disconnected/menu, split-landing-1440-top.
+
+## Nav overlap + menu theme round (18 Nov 2026, evening WAT)
+
+Muhammed's phone screenshots of the live app page showed two faults.
+First, the navbar overlapped the LIVE VAULTS eyebrow: the navbar is
+absolute, and the mobile `.section` padding shrink (48px at <=640px)
+pulled the first section up under it. The landing page never showed
+this because the hero carries its own top clearance. Fix: `.section
+.app-section { padding-top: 96px; }`, whose higher specificity
+survives the mobile padding rules. Measured at 390/360px: nav bottom
+72px, eyebrow top 97px. Second, the mobile menu was hardcoded dark
+navy (`#020a1f`, white links) in both themes: a leftover of the
+dark-hero design. It now follows the theme (`var(--surface)` panel,
+`var(--text)` links, theme-mix hover), light in light mode and dark
+in dark mode, still solid with the dimming backdrop. Screenshots in
+`verification/`: navfix-app-390-top, navfix-app-390-menu-light/dark,
+navfix-app-360-top, navfix-landing-390-menu-light. Mobile
+Claude-checklist suite green.

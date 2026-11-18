@@ -1221,6 +1221,14 @@ summary:focus-visible,
   border-bottom: 1px solid var(--border);
 }
 
+/* The navbar is absolute, so the app page (whose first section is the
+   vault section) needs top clearance for it at every width. The
+   higher-specificity selector survives the mobile .section padding
+   shrink, which otherwise pulled the eyebrow under the navbar. */
+.section.app-section {
+  padding-top: 96px;
+}
+
 /* Vault panels: two independent columns, so each column packs tightly
    and a panel growing in one never moves the other. No row coupling, no
    forced equal heights, no voids inside cards. The sessions slot sits
@@ -1973,8 +1981,8 @@ summary:focus-visible,
     left: 16px;
     right: 16px;
     z-index: 60;
-    background: #020a1f;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 20px;
     padding: 12px;
     box-shadow: var(--shadow-pop);
@@ -1985,7 +1993,7 @@ summary:focus-visible,
     display: flex;
     width: 100%;
     align-items: center;
-    color: #fff;
+    color: var(--text);
     font-size: 16px;
     font-weight: 600;
     padding: 13px 16px;
@@ -1997,7 +2005,7 @@ summary:focus-visible,
   }
   .mobile-menu a:hover,
   .mobile-menu button.mobile-link:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
     text-decoration: none;
   }
   .mobile-menu .btn {
