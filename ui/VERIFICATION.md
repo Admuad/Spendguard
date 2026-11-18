@@ -374,3 +374,89 @@ unchanged by this round: React hydration error #418 fires on a reload when
 a wallet connection was persisted (wagmi restores the connected state
 before hydration); React recovers client-side and every flow works.
 Screenshot in `verification/`: factory-labels-sessions.
+
+## Cap editing round (18 Nov 2026, evening WAT)
+
+`editSession` was added to SpendGuard.sol: the owner re-specifies a live
+session's recipients, per-tx limit, cap, and expiry while `spent` is
+preserved; the new cap must cover `spent` (`CapBelowSpent`, so
+`remainingCap` can never underflow); the old allowlist is cleared before
+the new one is set; grant validations are mirrored; an expired-but-active
+session can be edited to extend its expiry; a revoked session can never
+be edited. Every edit emits `SessionEdited`. THREAT-MODEL.md v2.3 records
+the semantics as INV-19. The forge suite is 56/56 (43 unit incl. 13 edit
+tests, 12 factory incl. edit isolation, invariant suite with an edit
+action: 3,309 edit calls, 0 failures).
+
+The contract change required a redeploy. New factory
+0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE (block 3492970), new demo vault
+0x048a64225419C11C9Ff0CB39aA925902c5e965Ac (block 3492987). The old demo
+vault was swept (0 tUSD8) and retired; the new vault holds 3.00 tUSD8 and
+the demo session (cap 1.00, per-tx 0.50, expiry 19 Nov ~13:58 WAT) was
+re-granted. Editing was proven live twice on-chain (cap 1.00 to 1.50 and
+back, remainingCap read back each time). The agent suite stays 88/88
+against the new vault.
+
+The UI gained an Edit bounds button on active sessions (owner only,
+including expired-but-active), opening a prefilled modal: max per
+payment, cap, recipients, and an expiry selector (keep current, +1 hour,
++24 hours, +7 days, +30 days). Problems are numbered, including the cap
+floor at spent; the confirm box shows old to new for changed bounds; Save
+is disabled when invalid or unchanged; on success the modal shows the
+transaction status with a Done button. The grant warning now says bounds
+can be edited later but the cap can never drop below spent, and the
+activity feed shows `SessionEdited` entries. The sessions sort is spent
+descending with active-first tie-breaking, and the own-vaults list
+filters out the demo vault so it never appears as both Demo and Your
+vault.
+
+Verified with a Playwright script against the Pages export served locally
+under `/Spendguard`, live RPC through a Node fetch proxy, and a mock
+injected wallet: all edit checks pass, including the two real on-chain
+edit entries in the activity feed, prefill values, the cap-floor and
+max-exceeds-cap problems, the review box, exactly one intercepted
+`eth_sendTransaction` with the `editSession` selector and the expected
+calldata words, Escape close, and reset-on-reopen. The factory (41) and
+labels/chips (14) suites were re-run against this build with no
+regressions; three failures found during the re-run were diagnosed and
+fixed (the demo/own vault duplication, the zero-spend sort tie, and a
+test-side localStorage key casing bug).
+
+## Usage indicator + Claude-corrections checklist round (18 Nov 2026, evening WAT)
+
+Muhammed called the sessions usage display clean but lame, and directed
+that every new UI feature be kept in check against Claude's corrections
+(responsiveness, flow, smoothness, UI, mobile responsiveness). The
+sessions usage display was rebuilt as a usage block: a head row (Spent X
+of Y tUSD8, with the percentage of cap on the right, or "Cap reached" at
+100%), a 10px bar (accent fill, danger at 100%, grey for revoked keys,
+width transition kept, progressbar semantics kept), and a slimmer foot
+row (Remaining, share of all spending, max per payment, expires). No
+gradients; all colors are theme variables.
+
+The checklist pass caught and fixed four real issues in the newest work:
+(1) the mobile destructive styling for the Revoke button matched both
+session buttons, so Edit bounds would have rendered full-width and red;
+the danger styling is now scoped to Revoke only, both buttons stay
+full-width 44px targets; (2) the deposit amount chips were ~34px tall,
+now 44px; (3) the modal close button was 38px, now 44px; (4) at 360px the
+connected Deposit panel overflowed the viewport by 28px: the nowrap
+approve-button label forced the single-column grid track wider than its
+container. Fixed with `minmax(0, 1fr)` on the mobile grid, `min-width: 0`
+on panels, and wrapping full-width button labels on narrow screens.
+
+Verified with a dedicated Playwright checklist script at 360/390/430px
+(light) plus a dark pass at 390px, connected with a mock owner wallet:
+all checks pass. Zero document overflow and zero overflowing elements
+outside the by-design capabilities carousel at every width, exactly one
+panel visible behind the segmented control, usage bars render at 10px,
+both action buttons are 44px with Revoke destructive and Edit neutral,
+the edit modal docks to the bottom edge as a bottom sheet (24px top
+radius, square bottom), modal inputs compute to 16px, amount chips are
+44px, the dark theme holds with a visible usage fill, and zero page
+errors. The filled-bar rendering was checked visually against a temporary
+local-only build pointed at the retired demo vault (the only vault with
+spending history: 0.30 / 0.25 / 0.10 tUSD8); the temporary build was
+discarded and the real build rebuilt. Screenshots in `verification/`:
+factory-usage-mobile, factory-edit-modal-mobile, usage-filled-desktop,
+usage-filled-mobile.

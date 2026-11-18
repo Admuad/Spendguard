@@ -697,8 +697,9 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
             to revoke and re-grant.
           </li>
           <li>
-            A grant cannot be edited. To change any bound, revoke it and grant
-            a new session. The new session starts with zero spent.
+            Bounds can be edited later from the sessions list, but the cap
+            can never drop below what the key has already spent. Only a
+            fresh grant after a revoke starts with zero spent.
           </li>
         </ul>
       </div>
@@ -837,16 +838,270 @@ function RevokeConfirmModal({
 }
 
 // ---------------------------------------------------------------------------
-// Sessions: every key ever granted, with live state and one-click revoke.
+// Edit bounds: a pop-up form that re-specifies a live session's bounds.
+// `spent` is never touched: the contract preserves it, and the new cap must
+// cover it. Revoked sessions cannot be edited (no button appears for them);
+// expired-but-active sessions can, which is how an expiry is extended.
+// On success the pop-up stays open showing the confirmed transaction, so
+// the owner sees the change land; on error the form stays intact to retry.
+// ---------------------------------------------------------------------------
+function EditSessionModal({
+  session,
+  vaultAddress,
+  now,
+  onClose,
+  onEdited,
+}: {
+  session: SessionState;
+  vaultAddress: Address;
+  now: number;
+  onClose: () => void;
+  onEdited: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const { labels } = useKeyLabels();
+  const label = getKeyLabel(labels, vaultAddress, session.key);
+  const expired = Number(session.expiresAt) * 1000 <= now;
+
+  const [maxPerTx, setMaxPerTx] = useState(() => formatTusd8Input(session.maxPerTx));
+  const [spendCap, setSpendCap] = useState(() => formatTusd8Input(session.spendCap));
+  const [recipients, setRecipients] = useState(() => session.recipients.join("\n"));
+  const [expiryMode, setExpiryMode] = useState(expired ? "86400" : "keep");
+
+  const editFlow = useWriteFlow(onEdited);
+  const busy = editFlow.phase === "signing" || editFlow.phase === "confirming";
+
+  const parsedMax = parseTusd8(maxPerTx);
+  const parsedCap = parseTusd8(spendCap);
+  const parsedRecipients = parseRecipients(recipients);
+  const expiresAt =
+    expiryMode === "keep"
+      ? session.expiresAt
+      : BigInt(Math.floor(now / 1000) + Number(expiryMode));
+
+  const problems: string[] = [];
+  if (parsedMax === null || parsedMax === 0n) problems.push("Enter a per-payment limit above zero.");
+  if (parsedCap === null || parsedCap === 0n) problems.push("Enter a total spend cap above zero.");
+  if (parsedMax !== null && parsedCap !== null && parsedMax > parsedCap) {
+    problems.push("The per-payment limit cannot be larger than the total spend cap.");
+  }
+  if (parsedCap !== null && parsedCap < session.spent) {
+    problems.push(
+      `The cap cannot go below the ${formatTusd8(session.spent)} tUSD8 this key has already spent. Raise the cap, or revoke the key instead.`,
+    );
+  }
+  if (parsedRecipients.invalid.length > 0) problems.push("One or more recipient addresses are invalid.");
+  if (parsedRecipients.valid.length === 0) problems.push("Add at least one allowed recipient.");
+  if (expiresAt <= BigInt(Math.floor(now / 1000))) problems.push("Pick an expiry in the future.");
+
+  const unchanged =
+    parsedMax === session.maxPerTx &&
+    parsedCap === session.spendCap &&
+    expiresAt === session.expiresAt &&
+    parsedRecipients.valid.length === session.recipients.length &&
+    parsedRecipients.valid.every((r, i) => r.toLowerCase() === session.recipients[i].toLowerCase());
+  const formValid = problems.length === 0 && !unchanged;
+
+  const boundRow = (oldValue: bigint, newValue: bigint | null) =>
+    newValue === null || newValue === oldValue
+      ? `${formatTusd8(oldValue)} tUSD8`
+      : `${formatTusd8(oldValue)} → ${formatTusd8(newValue)} tUSD8`;
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit session bounds"
+      onClick={onClose}
+    >
+      <div className="modal" onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+        <h3>Edit session bounds</h3>
+        <p>
+          Key {shortenAddress(session.key)}
+          {label !== null ? ` (${label})` : ""}. The bounds below replace the
+          current ones the moment the transaction is mined. What the key has
+          already spent stays spent.
+        </p>
+        {editFlow.phase === "success" ? (
+          <>
+            <TxStatus
+              phase={editFlow.phase}
+              hash={editFlow.hash}
+              errorMessage={editFlow.errorMessage}
+              successLabel="Bounds updated. The key spends under the new bounds now."
+            />
+            <div className="modal-actions">
+              <button type="button" className="btn btn-primary" onClick={onClose} autoFocus>
+                Done
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="field">
+              <label htmlFor="edit-max">Max per payment (tUSD8)</label>
+              <input
+                id="edit-max"
+                className="input"
+                inputMode="decimal"
+                value={maxPerTx}
+                onChange={(e) => setMaxPerTx(e.target.value)}
+                disabled={busy}
+                autoFocus
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="edit-cap">Total spend cap (tUSD8)</label>
+              <input
+                id="edit-cap"
+                className="input"
+                inputMode="decimal"
+                value={spendCap}
+                onChange={(e) => setSpendCap(e.target.value)}
+                disabled={busy}
+              />
+              <p className="field-hint">
+                Already spent: {formatTusd8(session.spent)} tUSD8. The cap
+                cannot go below that.
+              </p>
+            </div>
+            <div className="field">
+              <label htmlFor="edit-expiry">Expiry</label>
+              <select
+                id="edit-expiry"
+                className="select"
+                value={expiryMode}
+                onChange={(e) => setExpiryMode(e.target.value)}
+                disabled={busy}
+              >
+                <option value="keep" disabled={expired}>
+                  Keep current expiry ({formatExpiry(session.expiresAt)})
+                </option>
+                <option value="3600">1 hour from now</option>
+                <option value="86400">24 hours from now</option>
+                <option value="604800">7 days from now</option>
+                <option value="2592000">30 days from now</option>
+              </select>
+              {expired && (
+                <p className="field-hint">
+                  This session has expired. Pick a new expiry to extend it.
+                </p>
+              )}
+            </div>
+            <div className="field">
+              <label htmlFor="edit-recipients">Allowed recipients (one per line)</label>
+              <textarea
+                id="edit-recipients"
+                className="input textarea"
+                rows={3}
+                value={recipients}
+                onChange={(e) => setRecipients(e.target.value)}
+                disabled={busy}
+                spellCheck={false}
+              />
+            </div>
+            <div className="confirm-box" aria-label="New bounds">
+              <div className="confirm-row">
+                <span>Max per payment</span>
+                <span>{boundRow(session.maxPerTx, parsedMax)}</span>
+              </div>
+              <div className="confirm-row">
+                <span>Total spend cap</span>
+                <span>{boundRow(session.spendCap, parsedCap)}</span>
+              </div>
+              <div className="confirm-row">
+                <span>Expiry</span>
+                <span>
+                  {expiresAt === session.expiresAt
+                    ? formatExpiry(session.expiresAt)
+                    : `${formatExpiry(session.expiresAt)} → ${formatExpiry(expiresAt)}`}
+                </span>
+              </div>
+              <div className="confirm-row">
+                <span>Recipients</span>
+                <span>
+                  {parsedRecipients.valid.length === session.recipients.length &&
+                  parsedRecipients.valid.every((r, i) => r.toLowerCase() === session.recipients[i].toLowerCase())
+                    ? `${session.recipients.length} approved`
+                    : `${session.recipients.length} → ${parsedRecipients.valid.length} approved`}
+                </span>
+              </div>
+            </div>
+            {problems.map((problem) => (
+              <p key={problem} className="error-text" role="alert">
+                {problem}
+              </p>
+            ))}
+            <TxStatus
+              phase={editFlow.phase}
+              hash={editFlow.hash}
+              errorMessage={editFlow.errorMessage}
+              successLabel="Bounds updated."
+            />
+            <div className="modal-actions">
+              <button type="button" className="btn btn-outline" onClick={onClose} disabled={busy}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!formValid || busy}
+                onClick={() => {
+                  if (!formValid || parsedMax === null || parsedCap === null) return;
+                  editFlow.submit({
+                    address: vaultAddress,
+                    abi: spendGuardAbi,
+                    functionName: "editSession",
+                    args: [
+                      session.key,
+                      parsedRecipients.valid as Address[],
+                      parsedMax,
+                      parsedCap,
+                      Number(expiresAt),
+                    ],
+                  });
+                }}
+              >
+                {busy ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sessions: every key ever granted, with live state, one-click revoke, and
+// editable bounds.
 // ---------------------------------------------------------------------------
 function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData; vaultAddress: Address; isOwner: boolean; now: number }) {
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const { labels, saveLabel } = useKeyLabels();
   const sortedSessions = useMemo(
     () =>
-      [...vault.sessions].sort((a, b) =>
-        a.spent === b.spent ? 0 : a.spent < b.spent ? 1 : -1,
-      ),
+      [...vault.sessions].sort((a, b) => {
+        if (a.spent !== b.spent) return a.spent < b.spent ? 1 : -1;
+        if (a.active !== b.active) return a.active ? -1 : 1;
+        return 0;
+      }),
     [vault.sessions],
   );
   const totalSpent = useMemo(
@@ -866,6 +1121,10 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
     revoking === null
       ? null
       : (vault.sessions.find((s) => s.key.toLowerCase() === revoking) ?? null);
+  const editingSession =
+    editing === null
+      ? null
+      : (vault.sessions.find((s) => s.key.toLowerCase() === editing) ?? null);
 
   return (
     <div className="panel panel-wide">
@@ -873,7 +1132,8 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
       <p className="panel-desc">
         Every session key ever granted to this vault, with its live
         on-chain state. Revoking is immediate and irreversible. A revoked
-        key can never spend again.
+        key can never spend again. Bounds can be edited while a session is
+        active; an edit never resets what the key has spent.
       </p>
 
       {vault.loading && vault.sessions.length === 0 ? (
@@ -899,6 +1159,7 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
               isOwner={isOwner}
               now={now}
               onAskRevoke={() => setRevoking(session.key.toLowerCase())}
+              onAskEdit={() => setEditing(session.key.toLowerCase())}
             />
           ))}
           <p className="field-hint">Key names are stored only in this browser.</p>
@@ -928,6 +1189,15 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
           }
         />
       )}
+      {editingSession !== null && (
+        <EditSessionModal
+          session={editingSession}
+          vaultAddress={vaultAddress}
+          now={now}
+          onClose={() => setEditing(null)}
+          onEdited={() => vault.refresh()}
+        />
+      )}
     </div>
   );
 }
@@ -940,6 +1210,7 @@ function SessionRow({
   isOwner,
   now,
   onAskRevoke,
+  onAskEdit,
 }: {
   session: SessionState;
   label: string | null;
@@ -948,6 +1219,7 @@ function SessionRow({
   isOwner: boolean;
   now: number;
   onAskRevoke: () => void;
+  onAskEdit: () => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("");
@@ -956,6 +1228,7 @@ function SessionRow({
   const spentPct =
     session.spendCap > 0n ? Number((session.spent * 10000n) / session.spendCap) / 100 : 0;
   const sharePct = totalSpent > 0n ? Number((session.spent * 1000n) / totalSpent) / 10 : 0;
+  const pctLabel = spentPct % 1 === 0 ? spentPct.toFixed(0) : spentPct.toFixed(1);
 
   return (
     <div className="session-row">
@@ -974,38 +1247,47 @@ function SessionRow({
         </div>
         <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
       </div>
-      <div className="session-meta">
-        <span>
-          Spent <strong>{formatTusd8(session.spent)} tUSD8</strong> of{" "}
-          <strong>{formatTusd8(session.spendCap)} tUSD8</strong>
-        </span>
-        <span>
-          Remaining <strong>{formatTusd8(session.remainingCap)} tUSD8</strong>
-        </span>
-        {totalSpent > 0n && (
+      <div className="usage">
+        <div className="usage-head">
           <span>
-            Share of all spending <strong>{sharePct.toFixed(1)}%</strong>
+            Spent{" "}
+            <strong>
+              {formatTusd8(session.spent)} of {formatTusd8(session.spendCap)} tUSD8
+            </strong>
           </span>
-        )}
-        <span>
-          Max per payment <strong>{formatTusd8(session.maxPerTx)} tUSD8</strong>
-        </span>
-        <span>
-          Expires <strong>{formatExpiry(session.expiresAt)}</strong>
-        </span>
-      </div>
-      <div
-        className="cap-bar"
-        role="progressbar"
-        aria-valuenow={Math.round(spentPct)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`Spent ${spentPct.toFixed(1)} percent of cap`}
-      >
+          <span className={`usage-pct ${spentPct >= 100 ? "full" : ""} ${!session.active ? "muted" : ""}`}>
+            {spentPct >= 100 ? "Cap reached" : `${pctLabel}% of cap`}
+          </span>
+        </div>
         <div
-          className={`cap-bar-fill ${spentPct >= 100 ? "full" : ""}`}
-          style={{ width: `${Math.min(spentPct, 100)}%` }}
-        />
+          className="usage-bar"
+          role="progressbar"
+          aria-valuenow={Math.round(spentPct)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Spent ${spentPct.toFixed(1)} percent of cap`}
+        >
+          <div
+            className={`usage-bar-fill ${spentPct >= 100 ? "full" : ""} ${!session.active ? "muted" : ""}`}
+            style={{ width: `${Math.min(spentPct, 100)}%` }}
+          />
+        </div>
+        <div className="usage-foot">
+          <span>
+            Remaining <strong>{formatTusd8(session.remainingCap)} tUSD8</strong>
+          </span>
+          {totalSpent > 0n && (
+            <span>
+              Share of all spending <strong>{sharePct.toFixed(1)}%</strong>
+            </span>
+          )}
+          <span>
+            Max per payment <strong>{formatTusd8(session.maxPerTx)} tUSD8</strong>
+          </span>
+          <span>
+            Expires <strong>{formatExpiry(session.expiresAt)}</strong>
+          </span>
+        </div>
       </div>
       <div className="recipient-chips" aria-label="Allowed recipients">
         {session.recipients.map((recipient) => (
@@ -1063,7 +1345,10 @@ function SessionRow({
       )}
       {isOwner && session.active && (
         <div className="session-actions">
-          <button type="button" className="btn btn-outline btn-sm" onClick={onAskRevoke}>
+          <button type="button" className="btn btn-outline btn-sm" onClick={onAskEdit}>
+            Edit bounds
+          </button>
+          <button type="button" className="btn btn-outline btn-sm btn-danger-outline" onClick={onAskRevoke}>
             Revoke session
           </button>
         </div>

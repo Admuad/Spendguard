@@ -34,7 +34,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 export const AEVUM_CHAIN_ID = 44005;
 export const DEFAULT_RPC_URL = "https://rpc-test.qday.info";
-export const DEFAULT_VAULT_ADDRESS = "0x9a113999851e446a7ab516472e2dae743fc2a0ca";
+export const DEFAULT_VAULT_ADDRESS = "0x048a64225419C11C9Ff0CB39aA925902c5e965Ac";
 export const EXPLORER_URL = "https://explorer-test.qday.info";
 export const TUSD8_DECIMALS = 6;
 

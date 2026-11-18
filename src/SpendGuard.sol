@@ -21,14 +21,17 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// such vault, owned by the project wallet.
 ///
 /// Security specification: THREAT-MODEL.md. Invariant numbers in comments below
-/// (INV-1..INV-17) refer to that document.
+/// (INV-1..INV-19) refer to that document.
 ///
 /// Design notes pinned by the threat model:
 /// - Expiry is a hard cutoff: a payment is valid only while
 ///   `block.timestamp < expiresAt`. A payment in the exact expiry second reverts.
 /// - Pause freezes spending, never recovery: `ownerWithdraw` works while paused.
-/// - There is no edit operation. To change a session, revoke it and grant a new
-///   one; the new session starts with `spent == 0`.
+/// - Bounds can be edited (`editSession`, INV-19): the owner re-specifies a
+///   live session's bounds while `spent` is preserved. The new cap must cover
+///   what the key has already spent, and a revoked session can never be
+///   edited: revocation stays terminal, and only a fresh grant resets
+///   `spent` to 0.
 /// - The vault never grants an ERC-20 approval to any address (INV-13).
 /// - All token movement goes through SafeERC20 as defense-in-depth (A-1):
 ///   the deployed tUSD8 reverts on failure (fork-verified 18 Nov 2026), and
@@ -60,6 +63,9 @@ contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
     event SessionGranted(
         address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt
     );
+    event SessionEdited(
+        address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt
+    );
     event SessionRevoked(address indexed sessionKey, uint256 spent, uint256 remainingCap);
     event PaymentExecuted(
         address indexed sessionKey, address indexed recipient, uint256 amount, uint256 newSpent, uint256 remainingCap
@@ -71,6 +77,7 @@ contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
     error ZeroSpendCap();
     error ZeroMaxPerTx();
     error MaxPerTxExceedsSpendCap();
+    error CapBelowSpent();
     error ExpiryInPast();
     error EmptyAllowlist();
     error SessionAlreadyActive();
@@ -107,7 +114,8 @@ contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
         emit Deposit(msg.sender, received, token.balanceOf(address(this)));
     }
 
-    /// @notice Grant (or re-grant) a session key. Owner only.
+    /// @notice Grant (or re-grant) a session key. Owner only. To change a
+    /// live session's bounds without resetting `spent`, use `editSession`.
     /// @dev Re-granting a revoked or expired key starts a FRESH session:
     /// the old allowlist is cleared and `spent` resets to 0 (INV-16).
     /// Granting to an already-active key reverts: revoke first (INV-11).
@@ -147,6 +155,50 @@ contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
         }
 
         emit SessionGranted(sessionKey, recipients, maxPerTx, spendCap, expiresAt);
+    }
+
+    /// @notice Edit an ACTIVE session's bounds. Owner only.
+    /// @dev Re-specifies the bounds; `spent` is preserved (INV-19) and the
+    /// session stays active. The new cap must cover what the key has already
+    /// spent, so `remainingCap` can never underflow. Editing an
+    /// expired-but-active session is allowed: it is how the owner extends
+    /// an expiry. A revoked session can never be edited: revocation is
+    /// terminal, and the path back is a fresh grant, which resets `spent`
+    /// to 0 (INV-16). Edits are allowed while paused; pause blocks
+    /// payments, not admin.
+    function editSession(
+        address sessionKey,
+        address[] calldata recipients,
+        uint256 maxPerTx,
+        uint256 spendCap,
+        uint64 expiresAt
+    ) external onlyOwner {
+        Session storage session = _sessions[sessionKey];
+        if (!session.active) revert SessionNotActive();
+        if (spendCap == 0) revert ZeroSpendCap();
+        if (maxPerTx == 0) revert ZeroMaxPerTx();
+        if (maxPerTx > spendCap) revert MaxPerTxExceedsSpendCap();
+        if (expiresAt <= block.timestamp) revert ExpiryInPast();
+        if (recipients.length == 0) revert EmptyAllowlist();
+        if (spendCap < session.spent) revert CapBelowSpent();
+
+        // Clear the old allowlist entries so the edit cannot inherit
+        // recipients the owner removed.
+        address[] storage oldRecipients = session.recipients;
+        for (uint256 i = 0; i < oldRecipients.length; i++) {
+            _isRecipientAllowed[sessionKey][oldRecipients[i]] = false;
+        }
+
+        session.maxPerTx = maxPerTx;
+        session.spendCap = spendCap;
+        session.expiresAt = expiresAt;
+        session.recipients = recipients;
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] == address(0)) revert ZeroAddress();
+            _isRecipientAllowed[sessionKey][recipients[i]] = true;
+        }
+
+        emit SessionEdited(sessionKey, recipients, maxPerTx, spendCap, expiresAt);
     }
 
     /// @notice Revoke a session key immediately. Owner only. Once mined, the

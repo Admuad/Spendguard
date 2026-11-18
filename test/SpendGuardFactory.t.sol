@@ -173,4 +173,36 @@ contract SpendGuardFactoryTest is Test {
         vaultB.executePayment(keyA, merchant, 1_000_000);
         assertEq(vaultB.vaultBalance(), 99_000_000);
     }
+
+    function test_Isolation_EditDoesNotCrossVaults() public {
+        SpendGuard vaultA = _createAs(alice);
+        SpendGuard vaultB = _createAs(bob);
+        _depositAs(alice, vaultA, 100_000_000);
+        _depositAs(bob, vaultB, 100_000_000);
+        uint64 expiry = uint64(block.timestamp + 3600);
+        // The SAME key address holds a session in both vaults.
+        vm.prank(alice);
+        vaultA.grantSession(keyA, _one(merchant), 10_000_000, 50_000_000, expiry);
+        vm.prank(bob);
+        vaultB.grantSession(keyA, _one(merchant), 10_000_000, 50_000_000, expiry);
+
+        // Alice cannot edit Bob's session at all.
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        vaultB.editSession(keyA, _one(merchant), 1_000_000, 5_000_000, expiry);
+
+        // Alice edits her own session: lower cap, tighter per-tx.
+        vm.prank(alice);
+        vaultA.editSession(keyA, _one(merchant), 1_000_000, 5_000_000, expiry);
+
+        // Bob's session is untouched.
+        SpendGuard.Session memory b = vaultB.getSession(keyA);
+        assertEq(b.spendCap, 50_000_000, "bob cap unchanged");
+        assertEq(b.maxPerTx, 10_000_000, "bob perTx unchanged");
+        assertTrue(b.active, "bob session active");
+        vm.prank(keyA);
+        vaultB.executePayment(keyA, merchant, 10_000_000); // pays under bob's bounds
+        assertEq(vaultB.getSession(keyA).spent, 10_000_000);
+        assertEq(vaultA.getSession(keyA).spent, 0, "alice session unspent");
+    }
 }

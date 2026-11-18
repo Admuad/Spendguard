@@ -166,9 +166,14 @@ emit PaymentExecuted
 - **Session key as an address, not a bearer secret.** The key *is* the
   identity (`msg.sender == sessionKey`). Naming another key's address
   authorises nothing, and there is no secret to leak in calldata.
-- **No edit operation.** Sessions are immutable once granted; change means
-  revoke + fresh grant. That removes a whole class of state-reset attacks
-  and keeps the audit trail append-only in meaning.
+- **Edit re-specifies bounds, never resets spending.** `editSession`
+  re-specifies a live session's recipients, per-tx limit, cap, and expiry
+  while `spent` is preserved, and the new cap must cover `spent`
+  (`CapBelowSpent`), so `remainingCap` can never underflow. A revoked
+  session can never be edited: revocation stays terminal, and only a fresh
+  grant after a revoke starts a new session at `spent == 0` (INV-16,
+  INV-19). Every edit emits `SessionEdited`, so the audit trail stays
+  append-only in meaning.
 - **Defence in depth on reentrancy.** Checks-effects-interactions *and* a
   reentrancy guard on all three fund-moving functions. Either layer alone
   stops the attack; both are required.

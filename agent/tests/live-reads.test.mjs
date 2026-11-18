@@ -13,14 +13,15 @@ import {
 // and no transaction is sent: the tests read real session state and run it
 // through the same pre-flight decision function the agent uses.
 //
-// Known sessions (18 Nov 2026):
+// Known sessions on the current demo vault (18 Nov 2026, editSession build):
 //   live demo key: 0x8b473F82D8371345F9572b956Def5602D8fD36d1, cap 1.00,
-//     per-tx 0.50, recipient = testnet wallet, expires ~19 Nov 07:03 WAT.
-//   revoked key: 0x0EeB488140af0b7543c491Ee298F4943A5113E6c, revoked after
-//     the end-to-end test; its remaining cap reads nonzero but it is dead.
+//     per-tx 0.50, recipient = testnet wallet, expires ~19 Nov 13:58 WAT.
+//   revoked key: 0x028BF06e4eBF397D8763B62abb3Ef611570B20e2, a throwaway
+//     granted and revoked the same day; its remaining cap reads 0.50 but
+//     it is dead. The key was never saved and nobody controls it.
 
 const LIVE_KEY = "0x8b473F82D8371345F9572b956Def5602D8fD36d1";
-const REVOKED_KEY = "0x0EeB488140af0b7543c491Ee298F4943A5113E6c";
+const REVOKED_KEY = "0x028BF06e4eBF397D8763B62abb3Ef611570B20e2";
 const TESTNET_WALLET = "0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898";
 const STRANGER = "0x000000000000000000000000000000000000dEaD";
 const NEVER_GRANTED = "0x0000000000000000000000000000000000000001";

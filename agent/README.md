@@ -31,9 +31,11 @@ either in the web UI (Grant panel) or with a contract call. The grant names:
 4. The expiry.
 
 The owner can revoke the session at any time, instantly, from the UI. A
-revoked key can never spend again. To change a grant, revoke it and grant a
-fresh one: there is no edit operation, and a fresh grant starts with zero
-spent.
+revoked key can never spend again. To change a grant's bounds, the owner
+edits it from the sessions list: the edit re-specifies the recipients,
+per-tx limit, cap, and expiry while the amount already spent is preserved,
+and the cap can never drop below what the key has already spent. Only a
+fresh grant after a revoke starts with zero spent.
 
 The agent key also needs a little tQDAY for gas. It holds no tUSD8 and
 never needs any: payments come out of the vault, not out of the key.

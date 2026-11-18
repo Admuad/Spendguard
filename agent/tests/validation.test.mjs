@@ -30,7 +30,7 @@ describe("loadConfig: valid input", () => {
     const config = loadConfig(validEnv());
     assert.equal(config.amount, 250_000n);
     assert.equal(config.rpcUrl, "https://rpc-test.qday.info");
-    assert.equal(config.vaultAddress, "0x9a113999851e446a7ab516472e2dae743fc2a0ca");
+    assert.equal(config.vaultAddress, "0x048a64225419C11C9Ff0CB39aA925902c5e965Ac");
     assert.equal(config.ledgerPath, "agent-ledger.jsonl");
     assert.equal(config.dryRun, false);
   });

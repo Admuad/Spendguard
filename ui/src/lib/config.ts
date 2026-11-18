@@ -32,24 +32,27 @@ export const FAUCET_URL = "https://faucet.qday.info/en";
 export const REPO_URL = "https://github.com/Admuad/Spendguard";
 export const DORAHACKS_URL = "https://dorahacks.io/hackathon/qday/detail";
 
-// The demo vault shown on the homepage (18 Nov 2026). Deploy tx:
-// 0xbe573e67a296cab6bacb5cfb1cfe91bef681171037db06e4383d7caa666536d3
+// The demo vault shown on the homepage (18 Nov 2026, second deployment:
+// the editSession build). Created through the factory below, tx:
+// 0x3bd27ff62b5ca059fb5478b47a1ab854f30cb3604d7eef665203b6af70d5ee6d
 // User vaults are created through the factory below; this address is the
-// project's own vault, labelled as a demo in the UI.
+// project's own vault, labelled as a demo in the UI. The first demo vault
+// (0x9a113999851e446a7ab516472e2dae743fc2a0ca, pre-edit bytecode) was
+// swept and retired; it holds 0 tUSD8.
 export const VAULT_ADDRESS =
-  "0x9a113999851e446a7ab516472e2dae743fc2a0ca" as const;
-// SpendGuardFactory (18 Nov 2026). Deploy tx:
-// 0xffe969563226c2dbca58cc2c67a9ad7bba19e8b7977de29eaddb85a8417c7dcc
+  "0x048a64225419C11C9Ff0CB39aA925902c5e965Ac" as const;
+// SpendGuardFactory (18 Nov 2026, second deployment: editSession build). Deploy tx:
+// 0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a
 export const FACTORY_ADDRESS =
-  "0x54c6ac3e1e63a1354f4b602435bfc09c9731bd2f" as const;
+  "0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE" as const;
 /** Block the factory was deployed in. User-vault event scans start here. */
-export const FACTORY_DEPLOY_BLOCK = 3488645n;
+export const FACTORY_DEPLOY_BLOCK = 3492970n;
 export const TUSD8_ADDRESS =
   "0x456569838f1d43009A91ebA4263147Afd7233483" as const;
 export const TUSD8_DECIMALS = 6;
 
 /** Block the vault was deployed in. The event scan starts here. Verified from the deploy receipt (tx 0xbe573e67…). */
-export const DEPLOY_BLOCK = 3461010n;
+export const DEPLOY_BLOCK = 3492987n;
 /** Aevum's eth_getLogs accepts at most 1,000 blocks per call (kit gotcha). */
 export const MAX_LOG_RANGE = 1000n;
 
@@ -77,6 +80,7 @@ export const spendGuardAbi = parseAbi([
   "function paused() view returns (bool)",
   "function deposit(uint256 amount)",
   "function grantSession(address sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint64 expiresAt)",
+  "function editSession(address sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint64 expiresAt)",
   "function revokeSession(address sessionKey)",
   "function executePayment(address sessionKey, address recipient, uint256 amount)",
   "function ownerWithdraw()",
@@ -88,6 +92,7 @@ export const spendGuardAbi = parseAbi([
   "function vaultBalance() view returns (uint256)",
   "event Deposit(address indexed depositor, uint256 amount, uint256 newBalance)",
   "event SessionGranted(address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt)",
+  "event SessionEdited(address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt)",
   "event SessionRevoked(address indexed sessionKey, uint256 spent, uint256 remainingCap)",
   "event PaymentExecuted(address indexed sessionKey, address indexed recipient, uint256 amount, uint256 newSpent, uint256 remainingCap)",
   "event OwnerWithdraw(address indexed owner, uint256 amount, uint256 newBalance)",
@@ -96,6 +101,7 @@ export const spendGuardAbi = parseAbi([
   "error ZeroSpendCap()",
   "error ZeroMaxPerTx()",
   "error MaxPerTxExceedsSpendCap()",
+  "error CapBelowSpent()",
   "error ExpiryInPast()",
   "error EmptyAllowlist()",
   "error SessionAlreadyActive()",

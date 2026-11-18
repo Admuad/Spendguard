@@ -17,6 +17,9 @@ contract SpendGuardTest is Test {
     event SessionGranted(
         address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt
     );
+    event SessionEdited(
+        address indexed sessionKey, address[] recipients, uint256 maxPerTx, uint256 spendCap, uint256 expiresAt
+    );
     event SessionRevoked(address indexed sessionKey, uint256 spent, uint256 remainingCap);
     event PaymentExecuted(
         address indexed sessionKey, address indexed recipient, uint256 amount, uint256 newSpent, uint256 remainingCap
@@ -63,6 +66,11 @@ contract SpendGuardTest is Test {
 
     function _grantDefault(address key) internal {
         _grant(key, _one(merchantA), PER_TX, CAP, expiry);
+    }
+
+    function _edit(address key, address[] memory recipients, uint256 perTx, uint256 cap, uint64 exp) internal {
+        vm.prank(owner);
+        vault.editSession(key, recipients, perTx, cap, exp);
     }
 
     function _depositAs(address who, uint256 amount) internal {
@@ -594,5 +602,152 @@ contract SpendGuardTest is Test {
         uint256 before = vault.vaultBalance();
         _depositAs(owner, amount);
         assertEq(vault.vaultBalance(), before + amount);
+    }
+
+    // ------------------------------------------------------------------
+    // Edit: bounds change, spent is preserved, revoked stays terminal
+    // ------------------------------------------------------------------
+
+    function test_Edit_RaisesCap_PreservesSpent() public {
+        _grantDefault(keyA);
+        _payAs(keyA, merchantA, PER_TX); // spent 10
+        _edit(keyA, _one(merchantA), 20_000_000, 80_000_000, expiry);
+        SpendGuard.Session memory s = vault.getSession(keyA);
+        assertEq(s.spent, PER_TX, "spent preserved");
+        assertEq(s.spendCap, 80_000_000, "cap raised");
+        assertEq(s.maxPerTx, 20_000_000, "perTx raised");
+        assertTrue(s.active, "still active");
+        assertEq(vault.remainingCap(keyA), 70_000_000, "remaining recomputed");
+        _payAs(keyA, merchantA, 20_000_000); // pays under the NEW per-tx cap
+        assertEq(_spent(keyA), 30_000_000);
+    }
+
+    function test_Edit_LowersCap_StillAboveSpent() public {
+        _grantDefault(keyA);
+        _payAs(keyA, merchantA, PER_TX); // spent 10
+        _edit(keyA, _one(merchantA), PER_TX, 15_000_000, expiry);
+        vm.prank(keyA);
+        vm.expectRevert(SpendGuard.CapExceeded.selector);
+        vault.executePayment(keyA, merchantA, 6_000_000); // 10 + 6 > 15
+        _payAs(keyA, merchantA, 5_000_000); // 10 + 5 == 15, exactly the cap
+        assertEq(_spent(keyA), 15_000_000);
+    }
+
+    function test_Edit_CapBelowSpentReverts() public {
+        _grantDefault(keyA);
+        _payAs(keyA, merchantA, PER_TX); // spent 10
+        vm.prank(owner);
+        vm.expectRevert(SpendGuard.CapBelowSpent.selector);
+        // perTx must fit the new cap, so only the cap floor can fire.
+        vault.editSession(keyA, _one(merchantA), 5_000_000, 5_000_000, expiry);
+        assertEq(_spent(keyA), PER_TX, "spent untouched by failed edit");
+        assertEq(vault.getSession(keyA).spendCap, CAP, "cap untouched by failed edit");
+    }
+
+    function test_Edit_CapEqualToSpent_OK() public {
+        _grantDefault(keyA);
+        _payAs(keyA, merchantA, PER_TX); // spent 10
+        _edit(keyA, _one(merchantA), PER_TX, PER_TX, expiry);
+        assertEq(vault.remainingCap(keyA), 0, "no room left");
+        vm.prank(keyA);
+        vm.expectRevert(SpendGuard.CapExceeded.selector);
+        vault.executePayment(keyA, merchantA, 1);
+    }
+
+    function test_Edit_LowersMaxPerTx() public {
+        _grantDefault(keyA);
+        _edit(keyA, _one(merchantA), 2_000_000, CAP, expiry);
+        vm.prank(keyA);
+        vm.expectRevert(SpendGuard.PerTxLimitExceeded.selector);
+        vault.executePayment(keyA, merchantA, 5_000_000);
+        _payAs(keyA, merchantA, 2_000_000);
+        assertEq(_spent(keyA), 2_000_000);
+    }
+
+    function test_Edit_ExtendsExpiry() public {
+        _grantDefault(keyA);
+        vm.warp(expiry); // exact expiry second: payments revert
+        vm.prank(keyA);
+        vm.expectRevert(SpendGuard.SessionExpired.selector);
+        vault.executePayment(keyA, merchantA, 1_000_000);
+        uint64 later = uint64(block.timestamp + 3600);
+        _edit(keyA, _one(merchantA), PER_TX, CAP, later);
+        _payAs(keyA, merchantA, 1_000_000); // spendable again under the new expiry
+        assertEq(_spent(keyA), 1_000_000);
+    }
+
+    function test_Edit_ReplacesRecipients() public {
+        _grantDefault(keyA);
+        _edit(keyA, _one(merchantB), PER_TX, CAP, expiry);
+        assertFalse(vault.isRecipientAllowed(keyA, merchantA), "old recipient cleared");
+        assertTrue(vault.isRecipientAllowed(keyA, merchantB), "new recipient allowlisted");
+        vm.prank(keyA);
+        vm.expectRevert(SpendGuard.RecipientNotAllowed.selector);
+        vault.executePayment(keyA, merchantA, 1_000_000);
+        _payAs(keyA, merchantB, 1_000_000);
+        assertEq(_spent(keyA), 1_000_000);
+    }
+
+    function test_Edit_RevokedReverts() public {
+        _grantDefault(keyA);
+        vm.prank(owner);
+        vault.revokeSession(keyA);
+        vm.prank(owner);
+        vm.expectRevert(SpendGuard.SessionNotActive.selector);
+        vault.editSession(keyA, _one(merchantA), PER_TX, CAP, expiry);
+    }
+
+    function test_Edit_NeverGrantedReverts() public {
+        vm.prank(owner);
+        vm.expectRevert(SpendGuard.SessionNotActive.selector);
+        vault.editSession(keyB, _one(merchantA), PER_TX, CAP, expiry);
+    }
+
+    function test_Edit_NonOwnerReverts() public {
+        _grantDefault(keyA);
+        vm.prank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
+        vault.editSession(keyA, _one(merchantA), PER_TX, CAP, expiry);
+    }
+
+    function test_Edit_ValidationsRevert() public {
+        _grantDefault(keyA);
+        vm.startPrank(owner);
+        vm.expectRevert(SpendGuard.ZeroSpendCap.selector);
+        vault.editSession(keyA, _one(merchantA), PER_TX, 0, expiry);
+        vm.expectRevert(SpendGuard.ZeroMaxPerTx.selector);
+        vault.editSession(keyA, _one(merchantA), 0, CAP, expiry);
+        vm.expectRevert(SpendGuard.MaxPerTxExceedsSpendCap.selector);
+        vault.editSession(keyA, _one(merchantA), CAP + 1, CAP, expiry);
+        vm.expectRevert(SpendGuard.ExpiryInPast.selector);
+        vault.editSession(keyA, _one(merchantA), PER_TX, CAP, uint64(block.timestamp));
+        vm.expectRevert(SpendGuard.EmptyAllowlist.selector);
+        vault.editSession(keyA, new address[](0), PER_TX, CAP, expiry);
+        address[] memory withZero = new address[](1);
+        withZero[0] = address(0);
+        vm.expectRevert(SpendGuard.ZeroAddress.selector);
+        vault.editSession(keyA, withZero, PER_TX, CAP, expiry);
+        vm.stopPrank();
+    }
+
+    function test_Edit_EmitsEvent() public {
+        _grantDefault(keyA);
+        vm.expectEmit(true, false, false, true, address(vault));
+        emit SessionEdited(keyA, _one(merchantB), 5_000_000, 60_000_000, expiry);
+        _edit(keyA, _one(merchantB), 5_000_000, 60_000_000, expiry);
+    }
+
+    function test_Edit_WhilePaused() public {
+        _grantDefault(keyA);
+        vm.prank(owner);
+        vault.pause();
+        _edit(keyA, _one(merchantA), 20_000_000, CAP, expiry); // admin works paused
+        assertEq(vault.getSession(keyA).maxPerTx, 20_000_000);
+        vm.prank(keyA);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vault.executePayment(keyA, merchantA, 1_000_000);
+        vm.prank(owner);
+        vault.unpause();
+        _payAs(keyA, merchantA, 20_000_000); // new bound applies after unpause
     }
 }

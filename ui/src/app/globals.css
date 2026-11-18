@@ -1147,6 +1147,7 @@ summary:focus-visible,
 }
 
 .panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 24px;
@@ -1367,37 +1368,75 @@ summary:focus-visible,
   display: none;
 }
 
-.session-meta {
+.usage {
+  margin-top: 12px;
+}
+
+.usage-head {
   display: flex;
-  gap: 18px;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 16px;
   flex-wrap: wrap;
-  margin-top: 10px;
   font-size: 14px;
   color: var(--text-2);
 }
 
-.session-meta strong {
+.usage-head strong {
   color: var(--text);
   font-weight: 600;
 }
 
-.cap-bar {
-  height: 8px;
+.usage-pct {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.usage-pct.full {
+  color: var(--danger);
+}
+
+.usage-pct.muted {
+  color: var(--text-2);
+}
+
+.usage-bar {
+  height: 10px;
   border-radius: 999px;
   background: var(--surface-3);
   overflow: hidden;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
-.cap-bar-fill {
+.usage-bar-fill {
   height: 100%;
   border-radius: 999px;
   background: var(--accent);
   transition: width 0.4s ease;
 }
 
-.cap-bar-fill.full {
+.usage-bar-fill.full {
   background: var(--danger);
+}
+
+.usage-bar-fill.muted {
+  background: var(--text-3);
+}
+
+.usage-foot {
+  display: flex;
+  gap: 6px 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.usage-foot strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .session-actions {
@@ -1667,10 +1706,10 @@ summary:focus-visible,
 
 .modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 38px;
-  height: 38px;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -1902,7 +1941,7 @@ summary:focus-visible,
     padding: 24px;
   }
   .app-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .cta-banner h2 {
     font-size: 30px;
@@ -2397,16 +2436,26 @@ summary:focus-visible,
     flex: 1;
   }
 
-  /* Sessions: the Revoke button is full-width and destructive. */
-  .session-actions > .btn-outline {
-    width: 100%;
-    min-height: 44px;
-    color: var(--danger);
-    border-color: var(--danger);
+  /* Full-width buttons wrap long labels on narrow screens. */
+  .btn-block {
+    white-space: normal;
+    height: auto;
+    min-height: 54px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    line-height: 1.35;
   }
 
-  .session-actions .btn {
+  /* Sessions: both action buttons are full-width 44px targets; only
+     Revoke is destructive. Edit stays neutral. */
+  .session-actions > .btn {
+    width: 100%;
     min-height: 44px;
+  }
+
+  .session-actions > .btn-danger-outline {
+    color: var(--danger);
+    border-color: var(--danger);
   }
 }
 
@@ -2636,6 +2685,9 @@ summary:focus-visible,
   background: var(--surface-2);
   color: var(--text);
   border-radius: 999px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   padding: 7px 14px;
   font: inherit;
   font-size: 13.5px;

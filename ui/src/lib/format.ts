@@ -95,6 +95,7 @@ export function plainErrorMessage(error: unknown): string {
     ["InsufficientVaultBalance", "This payment exceeds the vault balance. The owner needs to deposit more tUSD8 before it can go through."],
     ["SessionAlreadyActive", "This key already has an active session. Revoke it first, then grant a new one."],
     ["MaxPerTxExceedsSpendCap", "The per-transaction limit cannot be larger than the total spend cap."],
+    ["CapBelowSpent", "The new cap is lower than what this key has already spent. Raise the cap to at least the spent amount, or revoke the key instead."],
     ["ZeroSpendCap", "The spend cap must be greater than zero."],
     ["ZeroMaxPerTx", "The per-transaction limit must be greater than zero."],
     ["ExpiryInPast", "The expiry must be in the future."],

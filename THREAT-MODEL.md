@@ -4,7 +4,7 @@
 `0x456569838f1d43009A91ebA4263147Afd7233483` (6 decimals).
 **Status:** Security specification for the implementation in this repo.
 The implementation must satisfy every invariant below; a violation is a bug.
-**Version:** 2.2 — 2026-11-18 (factory model: per-user vaults, INV-18, R-11; v2.1 was the fork-verified token behavior update).
+**Version:** 2.3 — 2026-11-18 (cap editing: `editSession`, INV-19; v2.2 was the factory model).
 
 ## 1. System overview
 
@@ -87,7 +87,7 @@ pause, sweep) and recover what is left.
 | A-7 | Frontrunning the revoke | None fully (public mempool); INV-1 + INV-7 bound it | Loss at most the remaining cap, in either ordering (R-4) |
 | A-8 | Session key pausing/unpausing; pause locking the sweep | INV-6, INV-12 | Non-owner pause calls revert; sweep works while paused |
 | A-9 | Frontrunning the sweep | INV-1, INV-4 | Payment bounded by remaining cap; sweep recovers the rest |
-| A-10 | Abusive grant parameters (zero cap, per-tx > cap, past expiry, empty allowlist, silent overwrite of a live key) | INV-11 | Invalid grants revert at grant time |
+| A-10 | Abusive grant/edit parameters (zero cap, per-tx > cap, past expiry, empty allowlist, silent overwrite of a live key, edit dropping the cap below `spent`) | INV-11, INV-19 | Invalid grants and edits revert at call time; an edit can never make `remainingCap` underflow |
 | A-11 | Unlimited-approval abuse | INV-13 (no approvals granted; exact-amount pulls only) | No approval exists to exploit |
 | A-12 | Impersonation: calling `executePayment` naming another key | INV-14 (`msg.sender == sessionKey`) | Reverts; victim key untouched |
 | A-13 | Cross-vault spend, sweep, grant, or pause (key or owner of vault A acting on vault B) | INV-18, INV-12, INV-14 | Reverts; victim vault untouched |
@@ -107,13 +107,14 @@ pause, sweep) and recover what is left.
 | INV-9 | Checks-effects-interactions on every fund-moving function. |
 | INV-10 | A reentrancy guard protects all fund-moving functions (`deposit`, `executePayment`, `ownerWithdraw`). |
 | INV-11 | Grant validation: revert on `spendCap == 0`, `maxPerTx == 0`, `maxPerTx > spendCap`, `expiresAt <= block.timestamp`, empty allowlist, zero-address key/recipient, or a grant to an already-active key. |
-| INV-12 | Admin functions (`grantSession`, `revokeSession`, `pause`, `unpause`, `ownerWithdraw`) are owner-only. |
+| INV-12 | Admin functions (`grantSession`, `editSession`, `revokeSession`, `pause`, `unpause`, `ownerWithdraw`) are owner-only. |
 | INV-13 | No unlimited approvals. The vault never approves any spender; deposits pull exactly the deposit amount. |
 | INV-14 | The caller of `executePayment` must be the session-key address itself. |
 | INV-15 | Events for every state-changing operation, with full parameters. No silent state change. |
 | INV-16 | `spent` is monotonic per key and resets only by a fresh grant after revocation (which starts a new session at `spent == 0`). |
 | INV-17 | The vault's token balance is the single source of truth for solvency. No payment succeeds when the balance is below `amount`. |
 | INV-18 | Vault isolation: no vault's funds, sessions, or admin powers are reachable from any other vault or from the factory. Each vault's owner, sessions, and balance are independent; the factory holds no funds and owns no vault. |
+| INV-19 | Edit semantics: `editSession` re-specifies a live session's recipients, `maxPerTx`, `spendCap`, and `expiresAt` while `spent` is preserved; the new cap must cover `spent` (`CapBelowSpent`), so `remainingCap` never underflows; the old allowlist is cleared before the new one is set; a revoked session can never be edited (revocation stays terminal); grant validations are mirrored, and an expired-but-active session can be edited to extend its expiry. |
 
 ### Addendum (18 Nov 2026, from the starter-kit read)
 
@@ -209,5 +210,9 @@ test.
 - v2.2 — 2026-11-18 (factory model: SpendGuardFactory creates one vault per
   user, constructor takes the owner, INV-18 + A-13 + R-11 added, 11 factory
   isolation tests; demo-vault UI labelling and deposit gating recorded).
+- v2.3 — 2026-11-18 (cap editing: `editSession` + `SessionEdited` +
+  `CapBelowSpent`, INV-19 added, INV-12 and A-10 extended; 13 new unit
+  tests, 1 factory isolation test, invariant handler edit action; redeploy
+  of factory + demo vault on Aevum testnet, edit proven live twice).
 - Record future changes here with date and outcome. Do not silently edit
   the invariant list.

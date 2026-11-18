@@ -15,6 +15,8 @@ function activityDescription(item: VaultActivity): string {
       return `${shortenAddress(item.depositor)} deposited`;
     case "grant":
       return `Session granted to ${shortenAddress(item.sessionKey)} · ${item.recipients.length} recipient${item.recipients.length === 1 ? "" : "s"} · expires ${formatExpiry(item.expiresAt)}`;
+    case "edit":
+      return `Bounds edited for ${shortenAddress(item.sessionKey)} · ${item.recipients.length} recipient${item.recipients.length === 1 ? "" : "s"} · expires ${formatExpiry(item.expiresAt)}`;
     case "revoke":
       return `Session revoked for ${shortenAddress(item.sessionKey)}`;
     case "payment":
@@ -32,6 +34,7 @@ function activityAmount(item: VaultActivity): string | null {
     case "payment":
       return `${formatTusd8(item.amount)} tUSD8`;
     case "grant":
+    case "edit":
       return `cap ${formatTusd8(item.spendCap)}`;
     case "revoke":
       return `spent ${formatTusd8(item.spent)}`;
@@ -41,6 +44,7 @@ function activityAmount(item: VaultActivity): string | null {
 const KIND_LABEL: Record<VaultActivity["kind"], string> = {
   deposit: "Deposit",
   grant: "Grant",
+  edit: "Edit",
   revoke: "Revoke",
   payment: "Payment",
   withdraw: "Sweep",
@@ -133,8 +137,8 @@ export function Hero({
               </p>
             ) : vault.activity.length === 0 ? (
               <div className="empty-state">
-                No vault activity yet. Deposits, grants, payments, and revokes
-                will appear here as they happen on-chain.
+                No vault activity yet. Deposits, grants, edits, payments,
+                and revokes will appear here as they happen on-chain.
               </div>
             ) : (
               vault.activity.slice(0, 5).map((item) => (

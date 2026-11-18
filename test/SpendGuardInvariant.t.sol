@@ -122,6 +122,52 @@ contract SpendGuardHandler is Test {
         }
     }
 
+    /// Edit. Must succeed iff the key was active, the new bounds are valid,
+    /// and the new cap covers what the key has already spent (INV-19).
+    /// A successful edit preserves `spent` and `active`, and recipients
+    /// removed by the edit are no longer allowlisted.
+    function edit(uint256 keySeed, uint256 perTx, uint256 cap, uint256 expiryOffset, uint256 recipientSeed) public {
+        address key = _pickKey(keySeed);
+        perTx = bound(perTx, 0, 200_000_000);
+        cap = bound(cap, 0, 200_000_000);
+        expiryOffset = bound(expiryOffset, 0, 3 days);
+        uint64 expiry = uint64(block.timestamp + expiryOffset);
+        address[] memory recipients = _pickRecipients(recipientSeed);
+
+        SpendGuard.Session memory before = vault.getSession(key);
+        bool expected = before.active && cap > 0 && perTx > 0 && perTx <= cap && expiry > block.timestamp
+            && recipients.length > 0 && cap >= before.spent;
+
+        vm.prank(owner);
+        bool success;
+        try vault.editSession(key, recipients, perTx, cap, expiry) {
+            success = true;
+        } catch {
+            success = false;
+        }
+        assertEq(success, expected, "edit outcome");
+        if (success) {
+            SpendGuard.Session memory s = vault.getSession(key);
+            assertEq(s.spent, before.spent, "edit preserves spent");
+            assertEq(s.spendCap, cap, "edit cap");
+            assertEq(s.maxPerTx, perTx, "edit perTx");
+            assertEq(s.expiresAt, expiry, "edit expiry");
+            assertTrue(s.active, "edit stays active");
+            for (uint256 i = 0; i < recipients.length; i++) {
+                assertTrue(vault.isRecipientAllowed(key, recipients[i]), "edit allowlist");
+            }
+            for (uint256 i = 0; i < before.recipients.length; i++) {
+                bool stillListed = false;
+                for (uint256 j = 0; j < recipients.length; j++) {
+                    if (recipients[j] == before.recipients[i]) stillListed = true;
+                }
+                if (!stillListed) {
+                    assertFalse(vault.isRecipientAllowed(key, before.recipients[i]), "edit clears removed recipient");
+                }
+            }
+        }
+    }
+
     /// Revoke. Must succeed iff the key was active (P-7).
     function revoke(uint256 keySeed) public {
         address key = _pickKey(keySeed);
@@ -223,7 +269,7 @@ contract SpendGuardHandler is Test {
     /// Every admin function from a non-owner must fail (P-10).
     function adminFromNonOwner(uint256 fnSeed, uint256 callerSeed) public {
         address caller = callerSeed % 2 == 0 ? keys[0] : attacker;
-        uint256 fn = fnSeed % 5;
+        uint256 fn = fnSeed % 6;
         vm.prank(caller);
         if (fn == 0) {
             address[] memory recipients = new address[](1);
@@ -242,6 +288,12 @@ contract SpendGuardHandler is Test {
         } else if (fn == 3) {
             try vault.unpause() {
                 revert("non-owner unpause succeeded");
+            } catch {}
+        } else if (fn == 4) {
+            address[] memory recipients = new address[](1);
+            recipients[0] = merchantA;
+            try vault.editSession(keys[1], recipients, 1_000_000, 10_000_000, uint64(block.timestamp + 3600)) {
+                revert("non-owner edit succeeded");
             } catch {}
         } else {
             try vault.ownerWithdraw() {
@@ -277,19 +329,20 @@ contract SpendGuardInvariantTest is StdInvariant, Test {
         handler = new SpendGuardHandler(vault, token, owner, keyA, keyB, attacker, merchantA, merchantB);
         targetContract(address(handler));
 
-        bytes4[] memory selectors = new bytes4[](8);
+        bytes4[] memory selectors = new bytes4[](9);
         selectors[0] = handler.deposit.selector;
         selectors[1] = handler.grant.selector;
-        selectors[2] = handler.revoke.selector;
-        selectors[3] = handler.pay.selector;
-        selectors[4] = handler.pauseOp.selector;
-        selectors[5] = handler.unpauseOp.selector;
-        selectors[6] = handler.sweep.selector;
-        selectors[7] = handler.warpOp.selector;
+        selectors[2] = handler.edit.selector;
+        selectors[3] = handler.revoke.selector;
+        selectors[4] = handler.pay.selector;
+        selectors[5] = handler.pauseOp.selector;
+        selectors[6] = handler.unpauseOp.selector;
+        selectors[7] = handler.sweep.selector;
+        selectors[8] = handler.warpOp.selector;
         // adminFromNonOwner is exercised via its own selector too.
-        bytes4[] memory all = new bytes4[](9);
-        for (uint256 i = 0; i < 8; i++) all[i] = selectors[i];
-        all[8] = handler.adminFromNonOwner.selector;
+        bytes4[] memory all = new bytes4[](10);
+        for (uint256 i = 0; i < 9; i++) all[i] = selectors[i];
+        all[9] = handler.adminFromNonOwner.selector;
         targetSelector(FuzzSelector({addr: address(handler), selectors: all}));
     }
 

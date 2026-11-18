@@ -32,6 +32,16 @@ export type VaultActivity =
       expiresAt: bigint;
     }
   | {
+      kind: "edit";
+      hash: `0x${string}`;
+      blockNumber: bigint;
+      sessionKey: `0x${string}`;
+      recipients: readonly `0x${string}`[];
+      maxPerTx: bigint;
+      spendCap: bigint;
+      expiresAt: bigint;
+    }
+  | {
       kind: "revoke";
       hash: `0x${string}`;
       blockNumber: bigint;
@@ -131,6 +141,17 @@ function decodeWithAbi(log: Log): VaultActivity | null {
     case "SessionGranted":
       return {
         kind: "grant",
+        hash,
+        blockNumber,
+        sessionKey: decoded.args.sessionKey,
+        recipients: decoded.args.recipients,
+        maxPerTx: decoded.args.maxPerTx,
+        spendCap: decoded.args.spendCap,
+        expiresAt: decoded.args.expiresAt,
+      };
+    case "SessionEdited":
+      return {
+        kind: "edit",
         hash,
         blockNumber,
         sessionKey: decoded.args.sessionKey,
@@ -483,7 +504,13 @@ export function useMyVaults(ownerAddress: `0x${string}` | undefined) {
         args: [ownerAddress],
       });
       if (runRef.current !== myRun) return vaultsRef.current;
-      const next = [...list] as `0x${string}`[];
+      // The demo vault is itself a factory vault owned by the project
+      // wallet: listing it here too would show the same vault twice (a
+      // Demo pill and a Your vault pill, both active, with conflicting
+      // context lines). It is always presented as the demo vault.
+      const next = ([...list] as `0x${string}`[]).filter(
+        (v) => v.toLowerCase() !== VAULT_ADDRESS.toLowerCase(),
+      );
       vaultsRef.current = next;
       setVaults(next);
       return next;

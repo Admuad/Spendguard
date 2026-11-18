@@ -83,9 +83,11 @@ Controls:
   asks. The grant is the ceiling; the agent never exceeds it.
 - Dry-run mode shows the full plan before any live run. The README tells
   the operator to dry-run first, every time.
-- No edit operation exists on-chain: a mistaken grant is fixed by revoke
-  plus a fresh grant, which resets `spent` to zero. The agent needs no
-  change when a grant is replaced.
+- A mistaken grant is fixed by editing its bounds on-chain (the amount
+  already spent is preserved, and the cap cannot drop below it) or, for a
+  full reset, by revoke plus a fresh grant, which starts at `spent` zero.
+  The agent reads the live session on every run, so it picks up an edit
+  with no change; a revoke still stops it cold.
 
 Residual: a grant to an attacker-controlled address with a large cap is a
 real loss vector, and no agent-side check can distinguish "the owner meant
