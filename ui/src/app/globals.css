@@ -1,4 +1,4 @@
-/* SpendGuard UI — Vellure-inspired design, rebuilt in original code.
+/* SpendGuard UI. Vellure-inspired design, rebuilt in original code.
    Theming runs entirely on CSS variables: light mode is the Vellure look
    (dark gradient hero, white page, white cards); dark mode keeps the same
    layout and accent with dark surfaces throughout. */
@@ -69,6 +69,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -121,19 +122,27 @@ select {
     box-shadow 0.25s ease;
 }
 
-/* Uniform theme switch: while .theme-changing is on <html> (one 300ms
-   window per toggle), every element fades on the same 0.25s clock, so no
-   component snaps ahead of the rest. The class is never present on load,
-   so the first paint never animates. Reduced-motion users get an instant
-   switch instead (see the media query near the end of this file). */
-.theme-changing,
-.theme-changing *,
-.theme-changing *::before,
-.theme-changing *::after {
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease,
-    fill 0.25s ease, stroke 0.25s ease, box-shadow 0.25s ease,
-    transform 0.25s ease !important;
-  transition-delay: 0s !important;
+/* Atomic theme switch: while .theme-instant is on <html> (two animation
+   frames per toggle), every transition is suppressed, so the whole page
+   lands on the new theme in a single paint. Fading the switch made
+   components appear to change at different speeds: gradients and shadows
+   cannot interpolate like flat colours, and the repaint staggers on
+   phones. The toggle thumb and track keep their motion, since the thumb
+   slide is the signal that the tap registered. The class is never
+   present on load, so the first paint is unaffected. */
+.theme-instant,
+.theme-instant *,
+.theme-instant *::before,
+.theme-instant *::after {
+  transition: none !important;
+}
+
+.theme-instant .theme-toggle-thumb {
+  transition: transform 0.25s ease !important;
+}
+
+.theme-instant .theme-toggle-track {
+  transition: background-color 0.25s ease !important;
 }
 
 /* Visible keyboard focus on interactive elements (inputs carry their own
@@ -1299,6 +1308,11 @@ summary:focus-visible,
   overflow-wrap: anywhere;
 }
 
+/* Phones show the shortened address; the full address stays on desktop. */
+.session-key-short {
+  display: none;
+}
+
 .session-meta {
   display: flex;
   gap: 18px;
@@ -1680,12 +1694,6 @@ summary:focus-visible,
     transform: none;
     transition: none;
   }
-  .theme-changing,
-  .theme-changing *,
-  .theme-changing *::before,
-  .theme-changing *::after {
-    transition: none !important;
-  }
   html {
     scroll-behavior: auto;
   }
@@ -1724,7 +1732,9 @@ summary:focus-visible,
     display: none;
   }
   .nav-cta {
-    display: none;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
   }
   .theme-toggle-label {
     display: none;
@@ -1869,11 +1879,280 @@ summary:focus-visible,
   .hero h1 {
     font-size: 34px;
   }
-  .dash-grid {
-    grid-template-columns: 1fr;
-  }
   .wallet-chip {
     max-width: 150px;
     overflow: hidden;
+  }
+}
+
+/* ---------------- Mobile: dedicated small-screen layer ---------------- */
+/* Phones get their own layout pass, not a squeezed desktop: a compact
+   navbar with Connect always visible, a bottom-sheet modal, a two-column
+   dashboard with a full-width balance, grid activity rows, shortened
+   session addresses, full-width panel actions, 16px inputs (no focus
+   zoom on mobile browsers), and safe-area insets. */
+@media (max-width: 640px) {
+  .container {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Navbar: logo, theme switch, Connect, menu all fit in one row. */
+  .nav {
+    padding: 14px 0;
+  }
+  .nav-inner {
+    gap: 10px;
+  }
+  .nav-actions {
+    gap: 8px;
+  }
+  .theme-toggle {
+    height: 40px;
+    padding: 0 8px;
+  }
+  .wallet-chip {
+    height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .hamburger {
+    width: 40px;
+    height: 40px;
+  }
+  .mobile-menu {
+    top: 64px;
+  }
+
+  /* Sections breathe less; headings step down one size. */
+  .section {
+    padding: 56px 0;
+  }
+  .section-tight {
+    padding: 48px 0;
+  }
+  .section-head {
+    margin-bottom: 32px;
+  }
+  .section-title {
+    font-size: 30px;
+  }
+  .section-sub {
+    font-size: 16px;
+  }
+  .hero {
+    padding-top: 116px;
+  }
+  .hero-sub {
+    font-size: 16px;
+  }
+
+  /* Dashboard: balance spans the full width, the rest pair up. */
+  .dash-card {
+    padding: 20px 16px;
+    margin-top: 40px;
+  }
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .dash-grid .kpi:first-child {
+    grid-column: 1 / -1;
+  }
+  .dash-grid .kpi:first-child .kpi-value {
+    font-size: 28px;
+  }
+  .kpi {
+    padding: 14px;
+  }
+  .kpi-value {
+    font-size: 22px;
+  }
+
+  /* Activity rows: kind and amount on one line, detail below. */
+  .activity-item {
+    gap: 4px 10px;
+    padding: 12px 0;
+  }
+  .activity-kind {
+    order: 1;
+    min-width: 0;
+  }
+  .activity-amount {
+    order: 2;
+    margin-left: auto;
+  }
+  .activity-detail {
+    order: 3;
+    flex-basis: 100%;
+    font-size: 13.5px;
+  }
+  .activity-hash {
+    order: 4;
+  }
+
+  /* Cards get tighter padding; nothing feels cavernous. */
+  .stat-strip-item {
+    padding: 18px 12px;
+  }
+  .stat-strip-value {
+    font-size: 26px;
+  }
+  .about-stat {
+    padding: 18px 20px;
+  }
+  .about-stat-value {
+    font-size: 30px;
+  }
+  .cap-card,
+  .bento-card,
+  .step-card {
+    padding: 22px 20px;
+  }
+  .tab-panel {
+    padding: 22px 20px;
+  }
+  .tab-btn {
+    padding: 14px 16px;
+  }
+  .stats-band {
+    padding: 36px 20px;
+    gap: 24px;
+  }
+  .stats-band-value {
+    font-size: 32px;
+  }
+  .guarantees {
+    padding: 20px;
+  }
+
+  /* Vault panels: roomier tap targets, no zoom on focus. */
+  .panel {
+    padding: 20px 18px;
+  }
+  .panel-desc {
+    font-size: 14.5px;
+  }
+  .input,
+  .textarea,
+  .select {
+    font-size: 16px;
+  }
+  .textarea {
+    min-height: 76px;
+  }
+  .empty-state {
+    padding: 18px 16px;
+  }
+  .empty-state .btn {
+    width: 100%;
+  }
+  .confirm-box {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+
+  /* Sessions: short addresses, tighter rows. */
+  .session-row {
+    padding: 16px;
+  }
+  .session-key-full {
+    display: none;
+  }
+  .session-key-short {
+    display: inline;
+  }
+  .session-meta {
+    gap: 8px 14px;
+    font-size: 13.5px;
+  }
+  .inline-confirm span {
+    flex-basis: 100%;
+  }
+  .inline-confirm .btn {
+    flex: 1 1 120px;
+  }
+
+  .net-banner {
+    padding: 16px 18px;
+    font-size: 14.5px;
+  }
+
+  /* FAQ, CTA, footer. */
+  .faq-q {
+    padding: 16px 18px;
+    font-size: 16px;
+  }
+  .faq-a-inner {
+    padding: 0 18px 18px;
+  }
+  .cta-banner {
+    padding: 44px 20px;
+  }
+  .cta-banner h2 {
+    font-size: 28px;
+  }
+  .cta-banner p {
+    font-size: 16px;
+  }
+  .footer {
+    padding: 36px 0 calc(40px + env(safe-area-inset-bottom));
+  }
+  .footer-brand {
+    max-width: none;
+  }
+  .footer-links {
+    gap: 28px;
+  }
+
+  /* Modal becomes a bottom sheet. */
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    border-radius: 24px 24px 0 0;
+    max-height: 88dvh;
+    padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  /* Mark only in the navbar: the wordmark costs a Connect button. */
+  .nav-logo .logo-wordmark {
+    display: none;
+  }
+  .nav-cta {
+    padding: 0 14px;
+  }
+  .hero h1 {
+    font-size: 34px;
+  }
+  .stat-strip-value {
+    font-size: 24px;
+  }
+  .dash-head .dash-sub {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero h1 {
+    font-size: 32px;
+  }
+  .section-title {
+    font-size: 28px;
+  }
+  .cta-banner h2 {
+    font-size: 26px;
+  }
+  .hero-cta-row {
+    gap: 10px;
   }
 }

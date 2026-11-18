@@ -40,7 +40,7 @@ export const TUSD8_ADDRESS =
   "0x456569838f1d43009A91ebA4263147Afd7233483" as const;
 export const TUSD8_DECIMALS = 6;
 
-/** Block the vault was deployed in — the event scan starts here. Verified from the deploy receipt (tx 0xbe573e67…). */
+/** Block the vault was deployed in. The event scan starts here. Verified from the deploy receipt (tx 0xbe573e67…). */
 export const DEPLOY_BLOCK = 3461010n;
 /** Aevum's eth_getLogs accepts at most 1,000 blocks per call (kit gotcha). */
 export const MAX_LOG_RANGE = 1000n;
@@ -59,7 +59,7 @@ export const readClient = createPublicClient({
 });
 
 // ---------------------------------------------------------------------------
-// SpendGuard ABI — mirrors src/SpendGuard.sol exactly. Do not guess: any
+// SpendGuard ABI. Mirrors src/SpendGuard.sol exactly. Do not guess: any
 // contract change must be reflected here.
 // ---------------------------------------------------------------------------
 export const spendGuardAbi = parseAbi([

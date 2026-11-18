@@ -62,9 +62,9 @@ export function Hero({
         <h1>Give an agent a key that can only spend a little.</h1>
         <p className="hero-sub">
           SpendGuard is a scoped session-key vault for tUSD8 on the Aevum
-          testnet. Deposit once, grant a key that pays only approved
-          recipients, within a cap, before an expiry — and take it back in
-          one click. Every bound is enforced on-chain, not by the interface.
+          testnet. Deposit once. Grant a key that pays only approved
+          recipients, within a cap, before an expiry. Take it back in one
+          click. The contract enforces every bound, not the interface.
         </p>
         <div className="hero-cta-row">
           <a href="#app" className="btn btn-white">

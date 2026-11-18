@@ -11,7 +11,7 @@ import { aevumTestnet, RPC_URL } from "./config";
  * Persistence: this app is a static client-side build (no server), so the
  * config intentionally does NOT use wagmi's `ssr` mode. With `ssr: true`,
  * wagmi skips store hydration and only restores the connection from a
- * server-provided cookie `initialState` — which a static build can never
+ * server-provided cookie `initialState`, which a static build can never
  * provide. The result is the classic hackathon flaw: close the tab, reopen
  * it, and the app shows disconnected even though the wallet still has the
  * site connected, forcing the user to disconnect in the wallet and

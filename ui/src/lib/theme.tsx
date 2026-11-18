@@ -32,14 +32,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => {
     const next: Theme = theme === "light" ? "dark" : "light";
     const root = document.documentElement;
-    // Uniform switch: .theme-changing puts every element on the same 0.25s
-    // clock for one window, so no component snaps ahead of the rest. It is
-    // never present on load, so the first paint never animates.
-    root.classList.add("theme-changing");
+    // Atomic switch: suppress every transition while the theme flips, so
+    // all components land on the new theme in the same paint. Fading the
+    // switch instead makes it look uneven, because gradients and shadows
+    // cannot fade the way flat colours can, and on a phone the repaint
+    // staggers into a visible jerk. The suppression class lives for two
+    // animation frames (plus a timeout fallback), long enough for the
+    // flip to commit and too short to notice. The toggle thumb keeps its
+    // slide: it is the one motion that should stay.
+    root.classList.add("theme-instant");
     if (changeTimer.current !== null) window.clearTimeout(changeTimer.current);
     changeTimer.current = window.setTimeout(
-      () => root.classList.remove("theme-changing"),
-      300,
+      () => root.classList.remove("theme-instant"),
+      100,
     );
     root.dataset.theme = next;
     root.style.colorScheme = next;
@@ -48,6 +53,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", next === "dark" ? "#00081d" : "#ffffff");
+    // Force the style recalc while transitions are suppressed, so the new
+    // theme is committed before the class is removed.
+    void root.offsetWidth;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        root.classList.remove("theme-instant");
+        if (changeTimer.current !== null) window.clearTimeout(changeTimer.current);
+      }),
+    );
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
     } catch {

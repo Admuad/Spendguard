@@ -115,7 +115,7 @@ export function plainErrorMessage(error: unknown): string {
   if (/network|timeout|fetch failed|failed to fetch/i.test(text)) {
     return "Could not reach the Aevum testnet. Check your connection and try again.";
   }
-  return "The transaction failed. Nothing changed on-chain — check the details and try again.";
+  return "The transaction failed. Nothing changed on-chain. Check the details and try again.";
 }
 
 /** Plain-language wallet-connection failures. A failed connect must never
@@ -130,7 +130,7 @@ export function plainConnectErrorMessage(error: unknown): string {
     return "No wallet was found in this browser. Install MetaMask, Rabby, or another injected wallet, then try again.";
   }
   if (/user rejected|user denied|rejected the request|4001/i.test(text)) {
-    return "The connection request was rejected in your wallet. Nothing was connected — try again when you are ready.";
+    return "The connection request was rejected in your wallet. Nothing was connected. Try again when you are ready.";
   }
   if (/already.*pending|request already/i.test(text)) {
     return "A wallet request is already open. Check your wallet and answer it, then try again.";
@@ -148,7 +148,7 @@ export function plainSwitchErrorMessage(error: unknown): string {
     return "The network switch was rejected in your wallet. Switch to the Aevum testnet (chain 44005) manually, or try again.";
   }
   if (/4902|unrecognized chain|addethereumchain|chain.*not.*add/i.test(text)) {
-    return "Your wallet could not add the Aevum testnet automatically. Add it manually — chain 44005, RPC https://rpc-test.qday.info — then switch to it.";
+    return "Your wallet could not add the Aevum testnet automatically. Add it manually: chain 44005, RPC https://rpc-test.qday.info. Then switch to it.";
   }
   return "Could not switch networks. Switch to the Aevum testnet (chain 44005) in your wallet and try again.";
 }

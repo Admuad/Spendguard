@@ -39,7 +39,7 @@ type TxPhase = "idle" | "signing" | "confirming" | "success" | "error";
 
 function useWriteFlow(onConfirmed?: () => void) {
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
-  // wagmi's isSuccess only means the receipt arrived — and wagmi's wrapper
+  // wagmi's isSuccess only means the receipt arrived, and wagmi's wrapper
   // THROWS (a bare Error carrying the replayed revert reason) when a
   // receipt is reverted, so a reverted transaction surfaces as a receipt
   // query error, never as a reverted receipt. Both shapes are handled:
@@ -91,8 +91,8 @@ function useWriteFlow(onConfirmed?: () => void) {
     ? plainErrorMessage(error)
     : isReverted || isRevertThrow
       ? readableReason
-        ? `The contract rejected this transaction on-chain: ${readableReason}. Nothing changed — the caps or vault state may have moved since the check.`
-        : "The contract rejected this transaction on-chain, so nothing changed. The caps or vault state may have moved since the check — see the transaction for the exact revert."
+        ? `The contract rejected this transaction on-chain: ${readableReason}. Nothing changed. The caps or vault state may have moved since the check.`
+        : "The contract rejected this transaction on-chain, so nothing changed. The caps or vault state may have moved since the check. See the transaction for the exact revert."
       : receiptError
         ? "The transaction was sent, but its confirmation could not be read. Check the explorer link before trying again, so the same action is not sent twice."
         : null;
@@ -123,7 +123,7 @@ function TxStatus({
   if (phase === "confirming") {
     return (
       <div className="tx-status tx-status-pending">
-        Transaction submitted — waiting for confirmation on Aevum testnet.{" "}
+        Transaction submitted. Waiting for confirmation on Aevum testnet.{" "}
         {hash && (
           <a href={explorerTxUrl(hash)} target="_blank" rel="noreferrer">
             View on the explorer ↗
@@ -291,7 +291,7 @@ function DepositPanel({
         >
           {approveFlow.phase === "signing" || approveFlow.phase === "confirming"
             ? "Approving…"
-            : `Step 1 of 2 — Approve exactly ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
+            : `Step 1 of 2: approve exactly ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
         </button>
       ) : (
         <button
@@ -310,7 +310,7 @@ function DepositPanel({
         >
           {depositFlow.phase === "signing" || depositFlow.phase === "confirming"
             ? "Depositing…"
-            : `Step 2 of 2 — Deposit ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
+            : `Step 2 of 2: deposit ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
         </button>
       )}
 
@@ -446,7 +446,7 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
       <h3>Grant a session key</h3>
       <p className="panel-desc">
         Give a person, bot, or agent a bounded key. It can only pay the
-        recipients below, within the caps, before the expiry — and you can
+        recipients below, within the caps, before the expiry. You can
         revoke it instantly at any time.
       </p>
 
@@ -565,11 +565,11 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
           </div>
           <div className="confirm-row">
             <span>Max per payment</span>
-            <span>{parsedMax !== null ? `${formatTusd8(parsedMax)} tUSD8` : "—"}</span>
+            <span>{parsedMax !== null ? `${formatTusd8(parsedMax)} tUSD8` : "…"}</span>
           </div>
           <div className="confirm-row">
             <span>Total spend cap</span>
-            <span>{parsedCap !== null ? `${formatTusd8(parsedCap)} tUSD8` : "—"}</span>
+            <span>{parsedCap !== null ? `${formatTusd8(parsedCap)} tUSD8` : "…"}</span>
           </div>
           <div className="confirm-row">
             <span>Expires</span>
@@ -577,7 +577,7 @@ function GrantPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
           </div>
           <div className="confirm-row">
             <span>Maximum loss if this key is stolen</span>
-            <span>{parsedCap !== null ? `${formatTusd8(parsedCap)} tUSD8` : "—"}</span>
+            <span>{parsedCap !== null ? `${formatTusd8(parsedCap)} tUSD8` : "…"}</span>
           </div>
         </div>
       )}
@@ -634,17 +634,17 @@ function SessionsPanel({ vault, isOwner, now }: { vault: VaultData; isOwner: boo
     <div className="panel panel-wide">
       <h3>Sessions</h3>
       <p className="panel-desc">
-        Every session key ever granted to this vault, with its live on-chain
-        state. Revoking is immediate and irreversible — a revoked key can
-        never spend again.
+        Every session key ever granted to this vault, with its live
+        on-chain state. Revoking is immediate and irreversible. A revoked
+        key can never spend again.
       </p>
 
       {vault.loading && vault.sessions.length === 0 ? (
         <p className="muted">Loading sessions…</p>
       ) : vault.sessions.length === 0 ? (
         <div className="empty-state">
-          No sessions have been granted yet. The owner can grant the first one
-          above — a key, its recipients, its caps, and its expiry.
+          No sessions have been granted yet. The owner can grant the first
+          one above: a key, its recipients, its caps, and its expiry.
         </div>
       ) : (
         vault.sessions.map((session) => (
@@ -712,7 +712,8 @@ function SessionRow({
           target="_blank"
           rel="noreferrer"
         >
-          {session.key}
+          <span className="session-key-full">{session.key}</span>
+          <span className="session-key-short">{shortenAddress(session.key)}</span>
         </a>
         <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
       </div>
@@ -847,8 +848,8 @@ function AgentPanel({
       <div className="panel">
         <h3>Pay as a session key</h3>
         <p className="panel-desc">
-          A granted key pays merchants within its bounds. The caller must be
-          the key itself — no one can spend another key&apos;s session.
+          A granted key pays merchants within its bounds. Only the key
+          itself can call. No one can spend another key&apos;s session.
         </p>
         <ConnectPrompt action="pay as a session key" />
       </div>
@@ -860,8 +861,8 @@ function AgentPanel({
       <div className="panel">
         <h3>Pay as a session key</h3>
         <p className="panel-desc">
-          A granted key pays merchants within its bounds. The caller must be
-          the key itself — no one can spend another key&apos;s session.
+          A granted key pays merchants within its bounds. Only the key
+          itself can call. No one can spend another key&apos;s session.
         </p>
         <div className="empty-state">
           No session has been granted to {shortenAddress(address)} yet. Ask the

@@ -137,7 +137,7 @@ export function ConnectButton({ className = "" }: { className?: string }) {
         onClick={() => setMenuOpen((open) => !open)}
         aria-haspopup="true"
         aria-expanded={menuOpen}
-        title="Connected wallet — click for options"
+        title="Connected wallet, click for options"
       >
         <span className="wallet-dot" />
         {shortenAddress(address)}
@@ -217,7 +217,7 @@ export function Navbar() {
   }, []);
 
   // Escape closes the menu, and the page behind it does not scroll while
-  // it is open — the same behaviour as the demo modal.
+  // it is open. Same behaviour as the demo modal.
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (event: KeyboardEvent) => {

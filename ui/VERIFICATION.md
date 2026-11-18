@@ -178,3 +178,43 @@ carry `aria-expanded`.
 Still outstanding after this round: the human live click-through of all
 wallet write flows with a real testnet wallet, including a genuinely
 reverting transaction through the UI.
+
+## Maximum-effort UI round — 18 Nov 2026 (copy, theme, mobile, single connection)
+
+Prompted by a phone screenshot of the live site: em dashes everywhere,
+wording that read as AI-written, theme switching that jerked, and a mobile
+layout that did not feel built for a phone.
+
+Copy: all user-facing strings rewritten in short, plain sentences. 52
+replacements across 10 source files plus the web manifest; zero em dashes
+remain in src/ or public text files, verified by grep and by checking the
+rendered page text in the browser. The BRANDING.md voice rule that used to
+allow em dashes in page copy was corrected to ban them everywhere.
+
+Theme: the fade-based switch was replaced with an atomic instant switch.
+The toggle suppresses every transition for two animation frames while the
+theme flips, so all components land on the new theme in one paint; the
+toggle thumb keeps its slide. Measured: 5ms after the click, body and
+every sampled card are already at their final dark values, the
+theme-color meta is already dark, and the suppression class is gone by
+20ms. No intermediate colour values anywhere. The old fade made the
+unevenness visible because gradients and shadows cannot fade like flat
+colours, and the repaint staggered on phones.
+
+Single connection: one WagmiProvider, one config, one injected connector.
+Proven with a mock wallet holding the owner address: one navbar click (one
+eth_requestAccounts call) lights up every panel at once, deposit input,
+grant form, agent state, and owner controls, with zero Connect prompts
+left. The persistence regression suite still passes in full: reload and
+new-tab reconnect with no prompt calls, disconnect stays disconnected,
+wallet-side revoke disconnects the UI.
+
+Mobile: a dedicated small-screen layer (640/480/360px). Connect stays
+visible in the navbar next to the theme switch and menu; the logo
+wordmark hides below 480px so the row fits. Dashboard balance spans the
+full width with two-column KPIs below. Activity rows use a kind/amount
+line with the detail below. Session rows show shortened addresses.
+Panels use full-width actions and 16px inputs. The demo modal becomes a
+bottom sheet. Safe-area insets are respected. Verified at 360, 390, and
+412px: zero document overflow, zero overflowing elements, zero page
+errors, modal docked to the bottom edge, inputs computing to 16px.

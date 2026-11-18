@@ -35,9 +35,9 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
         {DEMO_VIDEO_URL ? (
           <>
             <p>
-              The full flow on Aevum testnet: deposit, grant, a payment within
-              the cap, an over-cap payment reverting, a revoke, and the owner
-              sweep — every step with its transaction hash.
+              The full flow on Aevum testnet: deposit, grant, a payment
+              within the cap, an over-cap payment reverting, a revoke, and
+              the owner sweep. Every step shows its transaction hash.
             </p>
             <video className="modal-video" src={DEMO_VIDEO_URL} controls playsInline />
           </>
@@ -45,17 +45,17 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
           <>
             <p>
               The demo video is being recorded against the live testnet
-              deployment. It will show the full flow — deposit, grant, payment
+              deployment. It shows the full flow: deposit, grant, a payment
               within the cap, an over-cap payment reverting on camera, a
-              revoke, and the owner sweep — with transaction hashes for every
-              step.
+              revoke, and the owner sweep. Every step shows its transaction
+              hash.
             </p>
             <div className="modal-placeholder">
               <strong>Demo video coming soon</strong>
               <span>
-                The vault is live on Aevum testnet now. Connect a wallet below
-                and try the real flow — grant a session, pay within the cap,
-                and watch the caps hold.
+                The vault is live on Aevum testnet now. Connect a wallet
+                below and try the real flow. Grant a session, pay within
+                the cap, and watch the caps hold.
               </span>
             </div>
             <p style={{ marginTop: 16 }}>

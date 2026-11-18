@@ -16,7 +16,7 @@ import {
 } from "@/lib/config";
 
 // ---------------------------------------------------------------------------
-// Stat strip: real numbers only — live chain reads + the chain id.
+// Stat strip: real numbers only. Live chain reads plus the chain id.
 // ---------------------------------------------------------------------------
 export function StatStrip({ vault }: { vault: VaultData }) {
   return (
@@ -60,12 +60,12 @@ export function About() {
               mistake becomes a total loss.
             </p>
             <p className="about-body">
-              SpendGuard turns spending authority into a grantable object. The
-              owner keeps the only full key; every agent, bot, or cashier gets
-              a session key that can pay only approved recipients, only up to
-              a cap, only until an expiry. The contract enforces every bound —
-              a compromised key can lose at most its remaining cap, and the
-              owner takes it back in one click.
+              SpendGuard turns spending authority into something you can
+              grant. The owner keeps the only full key. Every agent, bot, or
+              cashier gets a session key that pays only approved recipients,
+              only up to a cap, only until an expiry. The contract enforces
+              every bound. A compromised key can lose at most its remaining
+              cap, and the owner takes it back in one click.
             </p>
           </div>
         </Reveal>
@@ -76,7 +76,7 @@ export function About() {
                 <CountUp value={17} />
               </span>
               <span className="about-stat-label">
-                Security invariants specified in the threat model — and tested
+                Security invariants in the threat model, all tested
               </span>
             </div>
           </Reveal>
@@ -114,7 +114,7 @@ export function About() {
 const CAPABILITIES = [
   {
     title: "Scoped session keys",
-    body: "Each key carries its own allowlist, per-transaction cap, cumulative cap, and expiry. A key is useful for exactly one job — nothing more.",
+    body: "Each key carries its own allowlist, per-payment limit, total cap, and expiry. A key is good for exactly one job. Nothing more.",
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="8" cy="15" r="4" />
@@ -124,7 +124,7 @@ const CAPABILITIES = [
   },
   {
     title: "Caps that cannot be bypassed",
-    body: "The per-transaction and cumulative checks run on-chain before every transfer. No frontend, script, or prompt can talk the contract out of them.",
+    body: "Every check runs on-chain before the transfer. No frontend, script, or prompt can talk the contract out of it.",
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z" />
@@ -134,7 +134,7 @@ const CAPABILITIES = [
   },
   {
     title: "Instant revocation",
-    body: "One owner transaction and the key is dead forever. Re-granting starts a fresh session at zero spent — a revoked key never comes back to life.",
+    body: "One owner transaction and the key is dead forever. A fresh grant starts at zero spent. A revoked key never comes back.",
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
@@ -144,7 +144,7 @@ const CAPABILITIES = [
   },
   {
     title: "Full audit trail",
-    body: "Every deposit, grant, payment, revoke, and sweep emits an event. The whole history of the vault is readable on-chain — no logins, no private database.",
+    body: "Every deposit, grant, payment, revoke, and sweep emits an event. The full history of the vault is readable on-chain. No logins. No private database.",
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -162,8 +162,8 @@ export function Capabilities() {
           <span className="eyebrow eyebrow-dark">Core capabilities</span>
           <h2 className="section-title">Bounded delegation, enforced by the contract</h2>
           <p className="section-sub">
-            The interface displays state and submits transactions. It never
-            authorizes anything — every check below lives in the vault itself.
+            The interface shows state and submits transactions. It never
+            authorizes anything. Every check lives in the vault itself.
           </p>
         </div>
         <div className="cap-grid">
@@ -191,10 +191,10 @@ const TABS = [
     title: "For the owner",
     desc: "Grant, watch, revoke, recover.",
     heading: "Full control, one key, zero sharing",
-    body: "You deposit once and hand out bounded keys instead of your wallet. You see every session's spent-versus-cap position live, and you can revoke any key, pause all payments, or sweep the whole balance at any moment — including while paused.",
+    body: "You deposit once and hand out bounded keys instead of your wallet. You see every session's spent against its cap, live. You can revoke any key, pause all payments, or sweep the whole balance at any moment, including while paused.",
     points: [
       "Grant with a confirmation summary: key, recipients, caps, expiry",
-      "One-click revoke — immediate once mined",
+      "One-click revoke. Immediate once mined.",
       "Pause freezes spending, never recovery",
     ],
   },
@@ -202,10 +202,10 @@ const TABS = [
     id: "agent",
     title: "For the agent",
     desc: "Pay merchants within your bounds.",
-    heading: "A key that can do its job — and nothing else",
-    body: "An agent, bot, or cashier holds only its session key. It pays allowlisted recipients within its per-transaction and cumulative caps until expiry. If the key leaks or the agent goes rogue, the damage is capped at the remaining allowance — and the owner can kill it instantly.",
+    heading: "A key that does its job and nothing else",
+    body: "An agent, bot, or cashier holds only its session key. It pays approved recipients within its per-payment limit and total cap until expiry. If the key leaks or the agent goes rogue, the damage stops at the remaining allowance. The owner can kill it instantly.",
     points: [
-      "The caller must be the key itself — no impersonation",
+      "Only the key itself can call. No impersonation.",
       "Plain-language errors when a payment breaks a bound",
       "No owner key anywhere near the agent's environment",
     ],
@@ -215,7 +215,7 @@ const TABS = [
     title: "For the auditor",
     desc: "Every state change, on-chain.",
     heading: "The audit trail is the chain",
-    body: "Deposits, grants, payments, revokes, and sweeps all emit events with full parameters. Anyone can reconstruct the vault's entire history from the public RPC — no account, no permission, no private log to trust.",
+    body: "Deposits, grants, payments, revokes, and sweeps all emit events with full parameters. Anyone can rebuild the vault's entire history from the public RPC. No account. No permission. No private log to trust.",
     points: [
       "17 invariants, 12 fuzz properties, 15 adversarial tests",
       "Checks-effects-interactions plus a reentrancy guard",
@@ -325,9 +325,10 @@ export function Bento() {
             <div className="bento-card">
               <h3>Bounded loss, always</h3>
               <p>
-                The worst case for any single compromised key is its remaining
-                cap. No failure — stolen key, malicious recipient, reentrancy,
-                frontrun — turns a bounded loss into a vault drain.
+                The worst case for one compromised key is its remaining
+                cap. A stolen key, a malicious recipient, reentrancy, a
+                frontrun: none of them turns a bounded loss into a vault
+                drain.
               </p>
               <p className="bento-foot">
                 Proven by <strong>INV-1, INV-9, INV-10</strong> in the threat
@@ -339,9 +340,9 @@ export function Bento() {
             <div className="bento-card">
               <h3>Pause never blocks recovery</h3>
               <p>
-                Pausing freezes every payment instantly. The owner sweep works
-                in every state — paused, keys revoked, keys expired. Recovery
-                is never locked behind the circuit breaker.
+                Pausing freezes every payment instantly. The owner sweep
+                works in every state: paused, keys revoked, keys expired.
+                Recovery is never locked behind the circuit breaker.
               </p>
               <p className="bento-foot">
                 Proven by <strong>INV-4, INV-6</strong> and adversarial test{" "}
@@ -370,7 +371,7 @@ export function Bento() {
 }
 
 // ---------------------------------------------------------------------------
-// How it works: three steps + safety guarantees. No pricing — free vault.
+// How it works: three steps + safety guarantees. No pricing. The vault is free.
 // ---------------------------------------------------------------------------
 export function HowItWorks() {
   return (
@@ -386,9 +387,10 @@ export function HowItWorks() {
               <div className="step-num">1</div>
               <h3>Deposit once</h3>
               <p>
-                Approve exactly the amount you want to deposit, then deposit
-                it. The vault pulls exactly that amount — no unlimited
-                approvals anywhere — and credits what actually arrived.
+                Approve exactly the amount you want to deposit, then
+                deposit it. The vault pulls exactly that amount. No
+                unlimited approvals anywhere. It credits what actually
+                arrived.
               </p>
             </div>
           </Reveal>
@@ -406,7 +408,7 @@ export function HowItWorks() {
           <Reveal delay={160}>
             <div className="step-card">
               <div className="step-num">3</div>
-              <h3>The key pays — within bounds</h3>
+              <h3>The key pays, within bounds</h3>
               <p>
                 The session key pays merchants itself. Every payment is
                 checked on-chain: caller, active, unexpired, within caps,
@@ -450,15 +452,15 @@ export function HowItWorks() {
 const FAQS = [
   {
     q: "What is a session key?",
-    a: "A session key is an address the vault owner authorizes to spend within tight bounds: a list of approved recipients, a maximum amount per payment, a maximum total amount, and an expiry time. The key holds no other power — it cannot grant, revoke, pause, or sweep.",
+    a: "A session key is an address the vault owner authorizes to spend within tight bounds: approved recipients, a maximum per payment, a maximum total, and an expiry time. The key has no other power. It cannot grant, revoke, pause, or sweep.",
   },
   {
     q: "What happens if a session key is stolen?",
-    a: "The thief can spend at most the key's remaining cap, only to its allowlisted recipients, only until expiry — and the owner can revoke the key instantly. The loss is bounded by design; it can never become a vault drain. Keep caps small and expiries short, and revoke promptly.",
+    a: "The thief can spend at most the key's remaining cap, only to its approved recipients, only until expiry. The owner can revoke the key instantly. The loss is bounded by design. It can never become a vault drain. Keep caps small and expiries short, and revoke fast.",
   },
   {
     q: "Can the owner always get the money back?",
-    a: "Yes. The owner sweep recovers the full remaining balance in every state — paused or not, keys revoked or expired. Pausing freezes payments only; it never blocks recovery.",
+    a: "Yes. The owner sweep recovers the full remaining balance in every state: paused or not, keys revoked or expired. Pausing freezes payments only. It never blocks recovery.",
   },
   {
     q: "Does the vault need the QDay SDK or smart accounts?",
@@ -470,7 +472,7 @@ const FAQS = [
   },
   {
     q: "Is my session data private?",
-    a: "No — and that is deliberate. Caps, recipients, spent amounts, and expiries are readable on-chain by anyone. That transparency is the audit trail. SpendGuard promises no privacy it does not deliver.",
+    a: "No, and that is deliberate. Caps, recipients, spent amounts, and expiries are readable on-chain by anyone. That transparency is the audit trail. SpendGuard promises no privacy it does not deliver.",
   },
   {
     q: "What does it cost to use SpendGuard?",
@@ -524,8 +526,9 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
         <div className="cta-banner">
           <h2>Stop handing agents your wallet key.</h2>
           <p>
-            Grant a bounded key instead. The vault is live on Aevum testnet —
-            deposit, grant, pay, and revoke for real, with test tokens.
+            Grant a bounded key instead. The vault is live on Aevum
+            testnet. Deposit, grant, pay, and revoke for real, with test
+            tokens.
           </p>
           <div className="hero-cta-row">
             <a href="#app" className="btn btn-white">

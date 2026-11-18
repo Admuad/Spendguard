@@ -48,7 +48,7 @@ export function LogoLockup({ size = 34 }: { size?: number }) {
   return (
     <>
       <LogoMark size={size} />
-      <span>SpendGuard</span>
+      <span className="logo-wordmark">SpendGuard</span>
     </>
   );
 }

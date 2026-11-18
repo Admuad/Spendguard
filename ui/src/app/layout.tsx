@@ -20,9 +20,9 @@ const interTight = localFont({
   display: "swap",
 });
 
-const TITLE = "SpendGuard — Scoped session-key vault for tUSD8 on Aevum";
+const TITLE = "SpendGuard: scoped session-key vault for tUSD8 on Aevum";
 const DESCRIPTION =
-  "Give an agent a key that can only spend a little, only to approved merchants, only until Friday — and take it back in one click. A scoped session-key vault for tUSD8 on the QDay Aevum testnet.";
+  "Give an agent a key that can only spend a little, only to approved merchants, only until Friday. Take it back in one click. A scoped session-key vault for tUSD8 on the QDay Aevum testnet.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "SpendGuard — give an agent a key that can only spend a little.",
+        alt: "SpendGuard. Give an agent a key that can only spend a little.",
       },
     ],
   },

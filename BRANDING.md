@@ -108,8 +108,11 @@ addresses and hashes: `ui-monospace, "SF Mono", Menlo, monospace`.
 
 Plain, direct, human. Say what the contract enforces, not what the
 interface hopes. Every number on the page is a real number from the
-contract, the tests, or the repo — never a placeholder, never rounded into
-a claim. No em dashes in X/social copy; em dashes are fine in page copy.
+contract, the tests, or the repo. Never a placeholder, never rounded into
+a claim. No em dashes anywhere in UI copy, X/social copy, or metadata:
+use periods, commas, colons, or separate sentences. Short sentences beat
+balanced triplets. If a sentence sounds like a press release, rewrite it
+the way you would explain it to another builder.
 
 ## Components
 
