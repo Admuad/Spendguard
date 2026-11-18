@@ -4,6 +4,8 @@
 
 SpendGuard is a scoped session-key vault for tUSD8 on the QDay Aevum testnet (chain 44005), built for the [Aevum Builder Challenge #1](https://dorahacks.io/hackathon/qday/detail). The owner deposits tUSD8 once, then grants session keys — to a person, a bot, an AI agent, or a cashier — that may spend only within tight, on-chain-enforced bounds: an allowlisted set of recipients, a per-transaction cap, a cumulative spend cap, and an expiry. Every bound is enforced by the contract, not by the frontend. The owner can revoke any key instantly and can always sweep the remaining balance.
 
+Aevum has no session-key tooling yet: the official SDK ships in Q1 2027, and no published bundler, paymaster, or factory is usable by builders today. SpendGuard is that missing piece, implemented natively in Solidity, working on the testnet now with plain wallets.
+
 Spending authority becomes a grantable, revocable, auditable object — not a shared wallet key.
 
 - **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
@@ -64,6 +66,18 @@ ARCHITECTURE.md           # Architecture, flows, and API examples
 THREAT-MODEL.md           # Security specification and accepted risks
 BRANDING.md               # Logo, colors, typography, and usage rules
 ```
+
+## Try it
+
+No code needed. The live demo is at https://admuad.github.io/Spendguard/.
+
+1. **Install a wallet.** MetaMask, Rabby, or any injected wallet in your browser. No smart account is needed.
+2. **Add the Aevum testnet.** Connect your wallet on the demo page and approve the network switch when asked. To add it manually: network name `QDay Aevum Testnet`, chain ID `44005`, RPC `https://rpc-test.qday.info`, explorer `https://explorer-test.qday.info`, currency `tQDAY`.
+3. **Claim test tokens.** The [web faucet](https://faucet.qday.info/en) gives 1 tUSD8 per claim with a 24-hour cooldown. The [QDay Discord](https://discord.gg/bYPhjmrSfK) `#faucet` channel gives 1 tQDAY plus 5 tUSD8 once per person.
+4. **Deposit.** Approve exactly the amount you want to deposit. The vault pulls exactly that amount.
+5. **Grant a key.** Name the key, its recipients, its per-payment limit, its total cap, and its expiry. The key pays within those bounds. Revoke it in one click at any time.
+
+The same guide is on the demo page, in the Setup section.
 
 ## Setup and reproduction
 

@@ -289,3 +289,26 @@ the `/Spendguard` base path and screenshotted at 1440px and 390px: the
 new mark renders in the navbar and footer (2 instances in the DOM and
 in the built HTML), styled hero intact. `BRANDING.md` was rewritten for
 the new mark (meaning, files, 16px minimum, flat-tile rule, icon specs).
+
+## Setup guide round (18 Nov 2026, morning WAT)
+
+Added a SetupGuide section (`#start`) between Bento and the vault app: five
+numbered steps (install a wallet, add the Aevum testnet with the manual
+network values from `src/lib/config.ts`, claim test tokens with faucet and
+Discord links, deposit, grant a key) plus a "You are ready" card with an
+"Open the vault" button. The hero and CTA banner "Get started" buttons now
+link to `#start`; the navbar gained a Setup link. The How it works section
+gained an intro stating the positioning: Aevum has no session-key tooling
+yet, the official SDK ships in Q1 2027, no published bundler, paymaster, or
+factory is usable by builders today, and SpendGuard is that missing piece,
+built in plain Solidity, working on the testnet now. README gained the same
+positioning sentence and a Try it section with the five steps.
+
+`npx tsc --noEmit` passes; the Pages export builds. Served locally under
+`/Spendguard` and screenshotted at 1440px (light and dark) and 390px
+(light): zero horizontal overflow at all three passes, zero page errors,
+all six cards render, the network values match config exactly, and the How
+it works intro renders as written. One mobile element screenshot showed the
+first card blank; a viewport re-check with a user-like scroll showed it
+rendering at opacity 1 with the reveal class applied, so the blank was a
+capture artifact of the stitched element screenshot, not a defect.

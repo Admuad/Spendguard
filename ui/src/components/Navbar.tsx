@@ -11,6 +11,7 @@ import { plainConnectErrorMessage, plainSwitchErrorMessage, shortenAddress } fro
 const NAV_LINKS = [
   { href: "#app", label: "Vault" },
   { href: "#capabilities", label: "Capabilities" },
+  { href: "#start", label: "Setup" },
   { href: "#how-it-works", label: "How it works" },
   { href: "#faq", label: "FAQ" },
 ];

@@ -10,6 +10,7 @@ import {
   EXPLORER_URL,
   FAUCET_URL,
   REPO_URL,
+  RPC_URL,
   TUSD8_ADDRESS,
   VAULT_ADDRESS,
   explorerAddressUrl,
@@ -371,6 +372,131 @@ export function Bento() {
 }
 
 // ---------------------------------------------------------------------------
+// Setup guide: from zero to a working session. No code, no SDK, no smart
+// account. Every value here matches ui/src/lib/config.ts.
+// ---------------------------------------------------------------------------
+export function SetupGuide() {
+  return (
+    <section className="section section-tight" id="start">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow eyebrow-dark">Setup guide</span>
+          <h2 className="section-title">From zero to a working session</h2>
+          <p className="section-sub">
+            Five steps. No code, no SDK, no smart account. A plain browser
+            wallet is enough.
+          </p>
+        </div>
+        <div className="steps steps-two">
+          <Reveal>
+            <div className="step-card">
+              <div className="step-num">1</div>
+              <h3>Install a wallet</h3>
+              <p>
+                Install MetaMask, Rabby, or any injected wallet in your
+                browser. SpendGuard works with plain wallets. No smart
+                account is needed.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={80}>
+            <div className="step-card">
+              <div className="step-num">2</div>
+              <h3>Add the Aevum testnet</h3>
+              <p>
+                Connect your wallet on this page and approve the network
+                switch when your wallet asks. If your wallet cannot add the
+                network on its own, add it manually with these values:
+              </p>
+              <div className="setup-net">
+                <div className="setup-net-row">
+                  <span>Network name</span>
+                  <code>QDay Aevum Testnet</code>
+                </div>
+                <div className="setup-net-row">
+                  <span>Chain ID</span>
+                  <code>44005</code>
+                </div>
+                <div className="setup-net-row">
+                  <span>RPC URL</span>
+                  <code>{RPC_URL}</code>
+                </div>
+                <div className="setup-net-row">
+                  <span>Explorer</span>
+                  <code>{EXPLORER_URL}</code>
+                </div>
+                <div className="setup-net-row">
+                  <span>Currency</span>
+                  <code>tQDAY</code>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={160}>
+            <div className="step-card">
+              <div className="step-num">3</div>
+              <h3>Claim test tokens</h3>
+              <p>
+                You need tQDAY for gas and tUSD8 to deposit. The web faucet
+                gives 1 tUSD8 per claim, with a 24 hour cooldown. The
+                Discord #faucet channel gives 1 tQDAY plus 5 tUSD8 once per
+                person. Gas costs a fraction of a tQDAY per transaction.
+              </p>
+              <p className="setup-links">
+                <a href={FAUCET_URL} target="_blank" rel="noreferrer">
+                  Web faucet ↗
+                </a>
+                <a
+                  href="https://discord.gg/bYPhjmrSfK"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  QDay Discord ↗
+                </a>
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={240}>
+            <div className="step-card">
+              <div className="step-num">4</div>
+              <h3>Deposit</h3>
+              <p>
+                Connect your wallet, open the vault below, and approve
+                exactly the amount you want to deposit. The vault pulls
+                exactly that amount and credits what actually arrived.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={320}>
+            <div className="step-card">
+              <div className="step-num">5</div>
+              <h3>Grant a key</h3>
+              <p>
+                Name the key, its recipients, its per-payment limit, its
+                total cap, and its expiry. Sign once. The key pays within
+                those bounds, and you can revoke it in one click.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={400}>
+            <div className="step-card setup-cta">
+              <h3>You are ready</h3>
+              <p>
+                The vault is live on the Aevum testnet with real test
+                tokens. Deposit, grant, pay, and revoke for real.
+              </p>
+              <a href="#app" className="btn btn-primary">
+                Open the vault
+              </a>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // How it works: three steps + safety guarantees. No pricing. The vault is free.
 // ---------------------------------------------------------------------------
 export function HowItWorks() {
@@ -380,6 +506,13 @@ export function HowItWorks() {
         <div className="section-head">
           <span className="eyebrow eyebrow-dark">How it works</span>
           <h2 className="section-title">Three steps to bounded spending</h2>
+          <p className="section-sub">
+            Aevum has no session-key tooling yet. The official SDK ships in
+            Q1 2027, and no published bundler, paymaster, or factory is
+            usable by builders today. SpendGuard is that missing piece,
+            built in plain Solidity. It works on the testnet now, with a
+            plain wallet.
+          </p>
         </div>
         <div className="steps">
           <Reveal>
@@ -531,7 +664,7 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
             tokens.
           </p>
           <div className="hero-cta-row">
-            <a href="#app" className="btn btn-white">
+            <a href="#start" className="btn btn-white">
               Get started
             </a>
             <button type="button" className="btn btn-ghost-dark" onClick={onWatchDemo}>

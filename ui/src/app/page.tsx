@@ -14,6 +14,7 @@ import {
   Footer,
   HowItWorks,
   RoleTabs,
+  SetupGuide,
   StatStrip,
   StatsBand,
 } from "@/components/Sections";
@@ -34,6 +35,7 @@ export default function Home() {
         <RoleTabs />
         <StatsBand />
         <Bento />
+        <SetupGuide />
         <VaultApp vault={vault} />
         <HowItWorks />
         <Faq />

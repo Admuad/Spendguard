@@ -71,7 +71,7 @@ export function Hero({
           in one click. Enforced on-chain, not by the interface.
         </p>
         <div className="hero-cta-row">
-          <a href="#app" className="btn btn-white">
+          <a href="#start" className="btn btn-white">
             Get started
           </a>
           <button type="button" className="btn btn-ghost-dark" onClick={onWatchDemo}>
