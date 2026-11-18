@@ -117,3 +117,38 @@ export function plainErrorMessage(error: unknown): string {
   }
   return "The transaction failed. Nothing changed on-chain — check the details and try again.";
 }
+
+/** Plain-language wallet-connection failures. A failed connect must never
+ * fail silently: the user needs to know whether there is no wallet, the
+ * request was rejected, or something else went wrong. */
+export function plainConnectErrorMessage(error: unknown): string {
+  const text =
+    error instanceof Error
+      ? `${error.name} ${error.message} ${"cause" in error ? String((error as { cause?: unknown }).cause ?? "") : ""} ${"shortMessage" in error ? String((error as { shortMessage?: unknown }).shortMessage ?? "") : ""}`
+      : String(error ?? "");
+  if (/provider not found|providernotfound|no provider|connector not found|no injected|no wallet|no ethereum provider/i.test(text)) {
+    return "No wallet was found in this browser. Install MetaMask, Rabby, or another injected wallet, then try again.";
+  }
+  if (/user rejected|user denied|rejected the request|4001/i.test(text)) {
+    return "The connection request was rejected in your wallet. Nothing was connected — try again when you are ready.";
+  }
+  if (/already.*pending|request already/i.test(text)) {
+    return "A wallet request is already open. Check your wallet and answer it, then try again.";
+  }
+  return "Could not connect to a wallet. Make sure your wallet is unlocked and try again.";
+}
+
+/** Plain-language network-switch failures. */
+export function plainSwitchErrorMessage(error: unknown): string {
+  const text =
+    error instanceof Error
+      ? `${error.name} ${error.message} ${"cause" in error ? String((error as { cause?: unknown }).cause ?? "") : ""} ${"shortMessage" in error ? String((error as { shortMessage?: unknown }).shortMessage ?? "") : ""}`
+      : String(error ?? "");
+  if (/user rejected|user denied|rejected the request|4001/i.test(text)) {
+    return "The network switch was rejected in your wallet. Switch to the Aevum testnet (chain 44005) manually, or try again.";
+  }
+  if (/4902|unrecognized chain|addethereumchain|chain.*not.*add/i.test(text)) {
+    return "Your wallet could not add the Aevum testnet automatically. Add it manually — chain 44005, RPC https://rpc-test.qday.info — then switch to it.";
+  }
+  return "Could not switch networks. Switch to the Aevum testnet (chain 44005) in your wallet and try again.";
+}

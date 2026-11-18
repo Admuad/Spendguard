@@ -20,7 +20,9 @@ import {
   isValidAddress,
   parseRecipients,
   parseTusd8,
+  plainConnectErrorMessage,
   plainErrorMessage,
+  plainSwitchErrorMessage,
   shortenAddress,
 } from "@/lib/format";
 import type { SessionState, VaultData } from "@/lib/useVaultData";
@@ -37,7 +39,24 @@ type TxPhase = "idle" | "signing" | "confirming" | "success" | "error";
 
 function useWriteFlow(onConfirmed?: () => void) {
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  // wagmi's isSuccess only means the receipt arrived — and wagmi's wrapper
+  // THROWS (a bare Error carrying the replayed revert reason) when a
+  // receipt is reverted, so a reverted transaction surfaces as a receipt
+  // query error, never as a reverted receipt. Both shapes are handled:
+  // a reverted receipt if one ever arrives, and the bare-Error throw.
+  // A viem/RPC error (named, e.g. TransactionReceiptNotFoundError) is a
+  // read failure instead, and says so.
+  const {
+    data: receipt,
+    isLoading: isConfirming,
+    isSuccess: receiptLoaded,
+    isError: receiptError,
+    error: receiptQueryError,
+  } = useWaitForTransactionReceipt({ hash });
+  const isReverted = receiptLoaded && receipt?.status === "reverted";
+  const isSuccess = receiptLoaded && receipt?.status === "success";
+  const isRevertThrow =
+    receiptError && receiptQueryError instanceof Error && receiptQueryError.name === "Error";
   const confirmedHashRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -47,17 +66,36 @@ function useWriteFlow(onConfirmed?: () => void) {
     }
   }, [isSuccess, hash, onConfirmed]);
 
-  const phase: TxPhase = error
-    ? "error"
-    : isSuccess
-      ? "success"
-      : hash && isConfirming
-        ? "confirming"
-        : isPending
-          ? "signing"
-          : "idle";
+  const phase: TxPhase =
+    error || isReverted || receiptError
+      ? "error"
+      : isSuccess
+        ? "success"
+        : hash && isConfirming
+          ? "confirming"
+          : isPending
+            ? "signing"
+            : "idle";
 
-  const errorMessage = error ? plainErrorMessage(error) : null;
+  // A replayed reason is shown only when it reads as plain text; custom
+  // errors replay to empty or binary data, which would be mojibake.
+  const revertReason = receiptQueryError instanceof Error ? receiptQueryError.message.trim() : "";
+  const readableReason =
+    revertReason !== "" &&
+    revertReason !== "unknown reason" &&
+    /^[\x20-\x7E]{3,120}$/.test(revertReason)
+      ? revertReason
+      : null;
+
+  const errorMessage = error
+    ? plainErrorMessage(error)
+    : isReverted || isRevertThrow
+      ? readableReason
+        ? `The contract rejected this transaction on-chain: ${readableReason}. Nothing changed — the caps or vault state may have moved since the check.`
+        : "The contract rejected this transaction on-chain, so nothing changed. The caps or vault state may have moved since the check — see the transaction for the exact revert."
+      : receiptError
+        ? "The transaction was sent, but its confirmation could not be read. Check the explorer link before trying again, so the same action is not sent twice."
+        : null;
 
   const submit = (args: Parameters<typeof writeContract>[0]) => {
     reset();
@@ -108,13 +146,18 @@ function TxStatus({
   }
   return (
     <div className="tx-status tx-status-error" role="alert">
-      {errorMessage ?? "The transaction failed."}
+      {errorMessage ?? "The transaction failed."}{" "}
+      {hash && (
+        <a href={explorerTxUrl(hash)} target="_blank" rel="noreferrer">
+          View on the explorer ↗
+        </a>
+      )}
     </div>
   );
 }
 
 function ConnectPrompt({ action }: { action: string }) {
-  const { connect, isPending } = useConnect();
+  const { connect, isPending, error, reset } = useConnect();
   return (
     <div className="empty-state">
       <p style={{ margin: "0 0 14px" }}>
@@ -125,10 +168,18 @@ function ConnectPrompt({ action }: { action: string }) {
         type="button"
         className="btn btn-primary btn-sm"
         disabled={isPending}
-        onClick={() => connect({ connector: injected() })}
+        onClick={() => {
+          reset();
+          connect({ connector: injected() });
+        }}
       >
         {isPending ? "Connecting…" : "Connect wallet"}
       </button>
+      {error && (
+        <p className="error-text" role="alert">
+          {plainConnectErrorMessage(error)}
+        </p>
+      )}
     </div>
   );
 }
@@ -868,7 +919,7 @@ function AgentPanel({
           <option value="">Choose a recipient…</option>
           {mySession.recipients.map((r) => (
             <option key={r} value={r}>
-              {r}
+              {shortenAddress(r)}
             </option>
           ))}
         </select>
@@ -1090,7 +1141,7 @@ function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
 // ---------------------------------------------------------------------------
 export function VaultApp({ vault }: { vault: VaultData }) {
   const { address, isConnected, chainId } = useAccount();
-  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { switchChain, isPending: isSwitching, error: switchError, reset: resetSwitch } = useSwitchChain();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -1126,12 +1177,18 @@ export function VaultApp({ vault }: { vault: VaultData }) {
               <strong>Wrong network.</strong> Your wallet is connected to chain{" "}
               {chainId}, but the vault lives on the Aevum testnet (chain 44005).
               Switch networks to use the vault.
+              {switchError && (
+                <div className="error-text">{plainSwitchErrorMessage(switchError)}</div>
+              )}
             </div>
             <button
               type="button"
               className="btn btn-primary btn-sm"
               disabled={isSwitching}
-              onClick={() => switchChain({ chainId: aevumTestnet.id })}
+              onClick={() => {
+                resetSwitch();
+                switchChain({ chainId: aevumTestnet.id });
+              }}
             >
               {isSwitching ? "Switching…" : "Switch to Aevum Testnet"}
             </button>

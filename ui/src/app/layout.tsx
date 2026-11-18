@@ -79,16 +79,19 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#00081d" },
-  ],
+  // No themeColor here: the single theme-color meta in <head> is kept in
+  // step with the app theme by the init script and the toggle. A
+  // media-query pair would follow the OS preference, not the user's
+  // in-app choice.
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={interTight.variable}>
       <head>
+        {/* Single theme-color meta, before the init script so the script can
+            sync it before first paint. */}
+        <meta name="theme-color" content="#ffffff" />
         {/* Resolve the theme before first paint: no flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="manifest" href={`${BASE_PATH}/manifest.webmanifest`} />

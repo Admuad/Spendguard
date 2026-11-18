@@ -90,6 +90,14 @@ app loads no font from any outside service.
 
 Headlines are medium weight, never bold. The premium feel comes from the
 500 weight plus tight tracking at large sizes, not from heavier strokes.
+
+Vellure reference values (verified by live computed-style inspection of
+vallure.framer.website, 18 Nov 2026; Neue Montreal, commercial — the values
+below are the reference the Inter Tight treatment approximates, not values
+copied into the app wholesale): nav links 14px/400/normal tracking;
+buttons 16px/500/−0.16px; large stats 32px/500/−0.64px with 18px/400 labels;
+H1 72px/500/−1.44px; body 18px/400. The stat numbers are a scroll-triggered
+count-up on Vellure (they read 0M+ at load and count up in view).
 Body copy stays at 400. Never set headlines in 700.
 
 **Fallback stack** (if the font file ever fails): `"Inter", system-ui,

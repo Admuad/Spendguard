@@ -6,7 +6,7 @@ import { injected } from "wagmi/connectors";
 import { ThemeToggle } from "@/lib/theme";
 import { LogoLockup } from "./Logo";
 import { aevumTestnet } from "@/lib/config";
-import { shortenAddress } from "@/lib/format";
+import { plainConnectErrorMessage, plainSwitchErrorMessage, shortenAddress } from "@/lib/format";
 
 const NAV_LINKS = [
   { href: "#app", label: "Vault" },
@@ -15,38 +15,117 @@ const NAV_LINKS = [
   { href: "#faq", label: "FAQ" },
 ];
 
+/** Small popover under a navbar button: a failed connect or switch must say
+ * why, instead of failing silently. Dismissed by retrying or by the ×. */
+function NavErrorPopover({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div
+      role="alert"
+      style={{
+        position: "absolute",
+        right: 0,
+        top: "calc(100% + 8px)",
+        zIndex: 60,
+        background: "var(--surface)",
+        border: "1px solid var(--danger)",
+        borderRadius: 14,
+        boxShadow: "var(--shadow-pop)",
+        padding: "12px 14px",
+        width: 280,
+        maxWidth: "calc(100vw - 48px)",
+        color: "var(--text)",
+        fontSize: 13.5,
+        lineHeight: 1.5,
+      }}
+    >
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={onDismiss}
+        style={{
+          position: "absolute",
+          top: 6,
+          right: 8,
+          background: "none",
+          border: "none",
+          color: "var(--text-2)",
+          fontSize: 18,
+          lineHeight: 1,
+          cursor: "pointer",
+          padding: 4,
+        }}
+      >
+        ×
+      </button>
+      <span style={{ paddingRight: 20, display: "block" }}>{message}</span>
+    </div>
+  );
+}
+
 export function ConnectButton({ className = "" }: { className?: string }) {
   const { address, isConnected, chainId } = useAccount();
-  const { connect, isPending } = useConnect();
+  const { connect, isPending, error: connectError, reset: resetConnect } = useConnect();
   const { disconnect } = useDisconnect();
-  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const { switchChain, isPending: isSwitching, error: switchError, reset: resetSwitch } = useSwitchChain();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Escape closes the wallet menu, like every other dismissible surface.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   const wrongChain = isConnected && chainId !== aevumTestnet.id;
 
   if (!isConnected || !address) {
     return (
-      <button
-        type="button"
-        className={`btn btn-primary nav-cta ${className}`}
-        disabled={isPending}
-        onClick={() => connect({ connector: injected() })}
-      >
-        {isPending ? "Connecting…" : "Connect wallet"}
-      </button>
+      <div style={{ position: "relative" }}>
+        <button
+          type="button"
+          className={`btn btn-primary nav-cta ${className}`}
+          disabled={isPending}
+          onClick={() => {
+            resetConnect();
+            connect({ connector: injected() });
+          }}
+        >
+          {isPending ? "Connecting…" : "Connect wallet"}
+        </button>
+        {connectError && (
+          <NavErrorPopover
+            message={plainConnectErrorMessage(connectError)}
+            onDismiss={resetConnect}
+          />
+        )}
+      </div>
     );
   }
 
   if (wrongChain) {
     return (
-      <button
-        type="button"
-        className={`btn btn-primary nav-cta ${className}`}
-        disabled={isSwitching}
-        onClick={() => switchChain({ chainId: aevumTestnet.id })}
-      >
-        {isSwitching ? "Switching…" : "Switch to Aevum Testnet"}
-      </button>
+      <div style={{ position: "relative" }}>
+        <button
+          type="button"
+          className={`btn btn-primary nav-cta ${className}`}
+          disabled={isSwitching}
+          onClick={() => {
+            resetSwitch();
+            switchChain({ chainId: aevumTestnet.id });
+          }}
+        >
+          {isSwitching ? "Switching…" : "Switch to Aevum Testnet"}
+        </button>
+        {switchError && (
+          <NavErrorPopover
+            message={plainSwitchErrorMessage(switchError)}
+            onDismiss={resetSwitch}
+          />
+        )}
+      </div>
     );
   }
 
@@ -58,7 +137,7 @@ export function ConnectButton({ className = "" }: { className?: string }) {
         onClick={() => setMenuOpen((open) => !open)}
         aria-haspopup="true"
         aria-expanded={menuOpen}
-        title="Connected wallet — click to disconnect"
+        title="Connected wallet — click for options"
       >
         <span className="wallet-dot" />
         {shortenAddress(address)}
@@ -137,6 +216,27 @@ export function Navbar() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Escape closes the menu, and the page behind it does not scroll while
+  // it is open — the same behaviour as the demo modal.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  // A successful connect closes the menu; a failed one leaves it open so
+  // the error stays visible.
+  useEffect(() => {
+    if (isConnected) setMenuOpen(false);
+  }, [isConnected]);
+
   return (
     <header className="nav">
       <div className="container nav-inner">
@@ -179,26 +279,33 @@ export function Navbar() {
               {link.label}
             </a>
           ))}
-          {!isConnected && <MobileConnect onDone={() => setMenuOpen(false)} />}
+          {!isConnected && <MobileConnect />}
         </div>
       )}
     </header>
   );
 }
 
-function MobileConnect({ onDone }: { onDone: () => void }) {
-  const { connect, isPending } = useConnect();
+function MobileConnect() {
+  const { connect, isPending, error, reset } = useConnect();
   return (
-    <button
-      type="button"
-      className="btn btn-primary btn-block"
-      disabled={isPending}
-      onClick={() => {
-        connect({ connector: injected() });
-        onDone();
-      }}
-    >
-      {isPending ? "Connecting…" : "Connect wallet"}
-    </button>
+    <div>
+      <button
+        type="button"
+        className="btn btn-primary btn-block"
+        disabled={isPending}
+        onClick={() => {
+          reset();
+          connect({ connector: injected() });
+        }}
+      >
+        {isPending ? "Connecting…" : "Connect wallet"}
+      </button>
+      {error && (
+        <p className="error-text" role="alert">
+          {plainConnectErrorMessage(error)}
+        </p>
+      )}
+    </div>
   );
 }

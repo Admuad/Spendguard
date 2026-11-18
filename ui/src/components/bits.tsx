@@ -64,6 +64,11 @@ export function CountUp({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Reduced-motion users get the final number immediately, no count-up.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(value);
+      return;
+    }
     if (typeof IntersectionObserver === "undefined") {
       setDisplay(value);
       return;

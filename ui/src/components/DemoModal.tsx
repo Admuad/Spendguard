@@ -28,7 +28,7 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
       onClick={onClose}
     >
       <div className="modal" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+        <button type="button" className="modal-close" onClick={onClose} aria-label="Close" autoFocus>
           ×
         </button>
         <h3>SpendGuard demo</h3>

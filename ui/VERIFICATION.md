@@ -100,10 +100,81 @@ build` + `npm run start`), not the dev server.
   verified by code review and build only. No wallet signing was performed in
   automated checks, and no transaction was sent from the UI. The contract
   functions themselves are proven by the 18 Nov on-chain E2E. The first live
-  click-through should be done by a human with a testnet wallet.
-- **Inter font rendering.** The sandbox blocks Google Fonts, so screenshots
-  show the fallback sans-serif. The Inter stylesheet link is in place; on any
-  normal connection it loads.
-- **Real-wallet connect.** Injected-wallet connection was not exercised
-  (no wallet in the sandbox). The connect/disconnect/switch-chain code paths
-  follow standard wagmi patterns and are code-reviewed only.
+  click-through should be done by a human with a testnet wallet. The
+  reverted-transaction handling in `useWriteFlow` (receipt-status check plus
+  wagmi's bare-Error revert throw) is verified against the wagmi/viem source
+  behaviour, not by a live reverted transaction through the UI.
+- **Font rendering.** Inter Tight is self-hosted (no outside font service)
+  and verified loaded on the live Pages site: `document.fonts` shows it
+  loaded and the H1 computes to 500/72px/−1.44px, matching the Vellure
+  treatment.
+- **Real-wallet connect.** A mock injected provider proved connect,
+  auto-reconnect on reload and new tab with no prompt, disconnect
+  persistence, and wallet-side revoke handling. A real wallet (MetaMask /
+  Rabby) click-through with real signing is still outstanding.
+
+## UX audit round — 18 Nov 2026 (theme switching + flaw hunt)
+
+Prompted by the question of whether the theme toggle switches all
+components at the same time. Method: frame-by-frame computed-style sampling
+during the toggle, plus a full code audit of every interactive surface
+(navbar, menus, modal, all five vault panels, write flows, focus handling).
+
+Found and fixed:
+
+1. **Uneven theme switching (confirmed by measurement).** Before the fix,
+   panels/cards faded over 0.25s, buttons/links over 0.2s, and session rows
+   snapped instantly (100% switched at the 50ms sample). Fix: the toggle
+   adds a `theme-changing` class to `<html>` for one 300ms window, putting
+   every element on the same 0.25s clock for colours, fills, shadows and
+   transforms; the class is never present on load, and reduced-motion users
+   get an instant switch. Re-measured after the fix: body, cards, FAQ
+   items, panels and session rows all track together (45% at 50ms, 88% at
+   100ms, 100% by 150ms).
+2. **Browser chrome ignored the in-app theme.** The `theme-color` metas
+   used media queries, so the address bar followed the OS, not the toggle.
+   Fix: a single `theme-color` meta, synced by the blocking init script
+   before first paint and by the toggle. Verified: dark `#00081d`, light
+   `#ffffff`, including a stored-dark first paint.
+3. **Reverted transactions could read as success.** `useWriteFlow` treated
+   wagmi's receipt-hook success as transaction success, but that only means
+   the receipt arrived. Fix: the receipt `status` decides success, and
+   wagmi's revert throw (a bare `Error` after an `eth_call` replay, verified
+   in `@wagmi/core` 2.22.1 source) is recognised as a revert, with a
+   plain-language message and an explorer link in the error state. A
+   receipt-read failure gets its own distinct message.
+4. **Silent connect/switch failures.** With no wallet installed, clicking
+   Connect returned to idle with no message anywhere (proven in the
+   browser). Fix: plain-language errors everywhere a connect or switch can
+   fail — a dismissible popover on the navbar button, inline text in the
+   mobile menu and the vault connect prompts, and inline text in the
+   wrong-network banner. The no-provider case maps wagmi's
+   `ProviderNotFoundError` ("Provider not found.") to "No wallet was found
+   in this browser…". Verified: message shows, dismiss clears it, retry
+   re-arms it. The mobile menu now stays open on a failed connect (so the
+   error stays visible) and closes on a successful one.
+5. **Menus lacked Escape/scroll-lock.** The mobile menu stayed open on
+   Escape and the page scrolled behind it (both proven). Fix: Escape
+   closes the mobile menu and the wallet-chip menu; the mobile menu locks
+   body scroll while open, mirroring the demo modal.
+6. **No branded keyboard focus.** Only inputs had focus styles. Fix: a
+   `:focus-visible` ring (2px accent, 2px offset) for links, buttons,
+   summaries and role=button. Verified by keyboard Tab: first focused
+   button shows the 2px accent outline.
+7. **Count-up ignored reduced motion.** `CountUp` is JS-driven, so the CSS
+   media query did not stop it. Fix: reduced-motion users get the final
+   number immediately. Verified with reduced-motion emulation: stats final
+   at 150ms and unchanged at 1450ms.
+8. **Small UX nits.** Pay-panel recipient dropdown now shows shortened
+   addresses (values stay full addresses); the demo modal focuses its close
+   button on open; the wallet-chip tooltip now says "click for options".
+
+Checked and clean, no change: zero horizontal overflow at 360px; session
+addresses wrap (`overflow-wrap: anywhere`); grant-form validation (caps,
+allowlist, future expiry); deposit two-step approve flow; chain definition
+carries everything a wallet needs for the add-chain fallback; FAQ buttons
+carry `aria-expanded`.
+
+Still outstanding after this round: the human live click-through of all
+wallet write flows with a real testnet wallet, including a genuinely
+reverting transaction through the UI.
