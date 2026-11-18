@@ -2599,9 +2599,11 @@ summary:focus-visible,
 .modal-actions {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
   margin-top: 20px;
+}
+
+.modal-actions .btn {
+  flex: 1;
 }
 
 @media (max-width: 860px) {
@@ -2613,8 +2615,89 @@ summary:focus-visible,
     margin-left: 0;
     width: 100%;
   }
+}
 
-  .modal-actions .btn {
-    flex: 1;
-  }
+/* Quick amounts, key names, and the sessions breakdown. */
+.amount-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.amount-chips-label {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.amount-chip {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.amount-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.amount-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sessions-summary {
+  font-size: 14.5px;
+  color: var(--text-2);
+  margin: 0 0 14px;
+}
+
+.session-identity {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.session-label {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--accent);
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.name-link:hover {
+  text-decoration: underline;
+}
+
+.name-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.name-editor .input {
+  flex: 1 1 180px;
 }

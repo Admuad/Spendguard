@@ -252,7 +252,7 @@ export function evaluatePreflight(state, intent) {
     failures.push(`The amount is above the remaining cap of ${formatAmount(state.remainingCap)} tUSD8.`);
   }
   if (intent.amount > state.vaultBalance) {
-    failures.push("The vault does not hold that much tUSD8 right now.");
+    failures.push(`The payment of ${formatAmount(intent.amount)} tUSD8 exceeds the vault balance of ${formatAmount(state.vaultBalance)} tUSD8. The owner needs to deposit ${formatAmount(intent.amount - state.vaultBalance)} tUSD8 more before this payment can go through.`);
   }
   return { ok: failures.length === 0, failures };
 }

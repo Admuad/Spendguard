@@ -10,6 +10,11 @@ export function formatTusd8(amount: bigint, digits = 2): string {
   return digits > 0 ? `${grouped}.${padded}` : grouped;
 }
 
+/** Format a tUSD8 base-unit amount for an amount input: exact, no grouping. */
+export function formatTusd8Input(amount: bigint): string {
+  return formatUnits(amount, TUSD8_DECIMALS);
+}
+
 /** Parse a human-entered tUSD8 amount ("1.5") to base units. Null if invalid. */
 export function parseTusd8(input: string): bigint | null {
   const trimmed = input.trim();
@@ -87,7 +92,7 @@ export function plainErrorMessage(error: unknown): string {
     ["SessionNotActive", "This session is revoked or was never granted. The owner needs to grant a fresh session."],
     ["SessionExpired", "This session has expired. The owner needs to grant a fresh session."],
     ["CallerNotSessionKey", "Only the session key itself can make this payment. Connect the wallet whose address was granted the session."],
-    ["InsufficientVaultBalance", "The vault does not hold enough tUSD8 for this payment. The owner needs to deposit more."],
+    ["InsufficientVaultBalance", "This payment exceeds the vault balance. The owner needs to deposit more tUSD8 before it can go through."],
     ["SessionAlreadyActive", "This key already has an active session. Revoke it first, then grant a new one."],
     ["MaxPerTxExceedsSpendCap", "The per-transaction limit cannot be larger than the total spend cap."],
     ["ZeroSpendCap", "The spend cap must be greater than zero."],

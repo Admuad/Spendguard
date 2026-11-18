@@ -58,7 +58,8 @@ export const MAX_LOG_RANGE = 1000n;
  * then shows an honest "coming soon" placeholder instead of a dead link.
  * Set to the final hosted video URL (login-free link) when it is published.
  */
-export const DEMO_VIDEO_URL = "";
+export const DEMO_VIDEO_URL =
+  "https://admuad.github.io/Spendguard/spendguard-demo-v5-web.mp4";
 
 /** Read-only client over the public RPC. No wallet needed for reads. */
 export const readClient = createPublicClient({

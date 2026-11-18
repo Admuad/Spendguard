@@ -29,7 +29,7 @@ Owner ──grant───>  │   Vault    │
 
 0. **Create.** Call `createVault` on the factory (or click Create vault on the demo page). You own the vault it creates, and its funds are yours alone.
 1. **Deposit.** The owner approves exactly the deposit amount and calls `deposit`. The vault pulls exactly that amount — no unlimited approvals anywhere.
-2. **Grant.** The owner calls `grantSession` with the session-key address, its recipient allowlist, per-transaction cap, cumulative cap, and expiry. A confirmation summary (key, cap, per-tx, expiry, recipients) is shown before the transaction.
+2. **Grant.** The owner calls `grantSession` with the session-key address, its recipient allowlist, per-transaction cap, cumulative cap, and expiry. A confirmation summary (key, cap, per-tx, expiry, recipients) is shown before the transaction. The owner can give the key a name, stored only in the browser, so the sessions list shows what each key is for, how much it has spent, and its share of all spending, most spending first. The deposit form offers 20%, 50%, and Max quick amounts from the wallet balance, and the vault can be topped up as often as the owner likes.
 3. **Pay.** The session-key holder calls `executePayment` naming itself, a recipient, and an amount. The contract checks: caller is the key, key is active, not expired, amount within the per-tx and cumulative caps, recipient allowlisted, vault funded, vault not paused. Then it updates accounting *before* the token transfer (checks-effects-interactions) under a reentrancy guard.
 4. **Revoke / pause / sweep.** The owner revokes instantly (`revokeSession`), freezes all payments (`pause`, which never blocks the sweep), or recovers everything left (`ownerWithdraw`) — in any state, at any time.
 

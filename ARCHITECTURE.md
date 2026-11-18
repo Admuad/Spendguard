@@ -135,7 +135,7 @@ event OwnerWithdraw(address indexed owner, uint256 amount, uint256 newBalance);
 | `SessionExpired()` | The session has expired |
 | `SessionNotActive()` | The session is revoked (or was never granted) |
 | `CallerNotSessionKey()` | Only the session key itself can spend |
-| `InsufficientVaultBalance()` | The vault does not hold that much |
+| `InsufficientVaultBalance()` | This payment exceeds the vault balance |
 | `ZeroAmount()` | Amount must be greater than zero |
 | `ZeroSpendCap()` / `ZeroMaxPerTx()` / `MaxPerTxExceedsSpendCap()` / `ExpiryInPast()` / `EmptyAllowlist()` / `SessionAlreadyActive()` / `ZeroAddress()` | Invalid grant parameters |
 | `EnforcedPause()` | The vault is paused (OpenZeppelin) |

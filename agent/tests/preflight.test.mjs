@@ -80,7 +80,7 @@ describe("evaluatePreflight", () => {
       { amount: 100_001n }
     );
     assert.equal(decision.ok, false);
-    assert.ok(decision.failures.some((f) => /does not hold that much/.test(f)));
+    assert.ok(decision.failures.some((f) => /exceeds the vault balance/.test(f)));
   });
   it("lists every failure at once", () => {
     const decision = evaluatePreflight(

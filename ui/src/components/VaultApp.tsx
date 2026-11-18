@@ -22,6 +22,7 @@ import {
 import {
   formatExpiry,
   formatTusd8,
+  formatTusd8Input,
   isValidAddress,
   parseRecipients,
   parseTusd8,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/format";
 import type { SessionState, VaultData } from "@/lib/useVaultData";
 import { useMyVaults, useVaultData, useWalletTokenData } from "@/lib/useVaultData";
+import { getKeyLabel, useKeyLabels } from "@/lib/keyLabels";
 
 /** Legacy transactions: the starter-kit docs warn some tooling mishandles
  * EIP-1559 fields on this chain, and the vault itself was deployed legacy. */
@@ -279,7 +281,8 @@ function DepositPanel({
       <h3>Deposit tUSD8</h3>
       <p className="panel-desc">
         Two steps, both exact-amount: approve exactly what you deposit, then
-        deposit. No unlimited approvals, ever.
+        deposit. No unlimited approvals, ever. You can top up as often as
+        you like; every deposit adds to the same vault balance.
       </p>
       <div className="field">
         <label htmlFor="deposit-amount">Amount to deposit</label>
@@ -294,6 +297,29 @@ function DepositPanel({
             disabled={busy}
           />
           <span className="amount-suffix">tUSD8</span>
+        </div>
+        <div className="amount-chips" aria-label="Quick amounts">
+          <span className="amount-chips-label">Quick amount</span>
+          {(
+            [
+              ["20%", 20n],
+              ["50%", 50n],
+              ["Max", 100n],
+            ] as const
+          ).map(([chipLabel, pct]) => {
+            const value = tokenBalance === null ? null : (tokenBalance * pct) / 100n;
+            return (
+              <button
+                key={chipLabel}
+                type="button"
+                className="amount-chip"
+                disabled={busy || value === null || value === 0n}
+                onClick={() => value !== null && setAmount(formatTusd8Input(value))}
+              >
+                {chipLabel}
+              </button>
+            );
+          })}
         </div>
         <p className="field-hint">
           Your wallet holds{" "}
@@ -399,11 +425,14 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
   const [expiryPreset, setExpiryPreset] = useState<number>(24 * 3600);
   const [customExpiry, setCustomExpiry] = useState("");
   const [useCustomExpiry, setUseCustomExpiry] = useState(false);
+  const [keyName, setKeyName] = useState("");
+  const { saveLabel } = useKeyLabels();
 
   const grantFlow = useWriteFlow(() => {
     vault.refresh();
     setSessionKey("");
     setRecipients("");
+    setKeyName("");
   });
 
   const parsedMax = useMemo(() => parseTusd8(maxPerTx), [maxPerTx]);
@@ -512,6 +541,24 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
       </div>
 
       <div className="field">
+        <label htmlFor="grant-name">Key name (optional)</label>
+        <input
+          id="grant-name"
+          className="input"
+          placeholder="e.g. Trading bot"
+          value={keyName}
+          onChange={(e) => setKeyName(e.target.value)}
+          disabled={busy}
+          autoComplete="off"
+          maxLength={60}
+        />
+        <p className="field-hint">
+          What is this key for? The name shows in the sessions list so you
+          can tell keys apart. It is stored only in this browser.
+        </p>
+      </div>
+
+      <div className="field">
         <label htmlFor="grant-recipients">Allowed recipients (one per line)</label>
         <textarea
           id="grant-recipients"
@@ -602,6 +649,12 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
             <span>Session key</span>
             <span>{shortenAddress(sessionKey.trim())}</span>
           </div>
+          {keyName.trim() !== "" && (
+            <div className="confirm-row">
+              <span>Name</span>
+              <span>{keyName.trim()}</span>
+            </div>
+          )}
           <div className="confirm-row">
             <span>Recipients</span>
             <span>{parsedRecipients.valid.length} approved</span>
@@ -656,6 +709,7 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
         disabled={!formValid || busy}
         onClick={() => {
           if (!formValid || expiresAt === null || parsedMax === null || parsedCap === null) return;
+          if (keyName.trim() !== "") saveLabel(vaultAddress, sessionKey.trim(), keyName.trim());
           grantFlow.submit({
             address: vaultAddress,
             abi: spendGuardAbi,
@@ -689,12 +743,14 @@ function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultA
 // ---------------------------------------------------------------------------
 function RevokeConfirmModal({
   session,
+  vaultAddress,
   now,
   busy,
   onCancel,
   onConfirm,
 }: {
   session: SessionState;
+  vaultAddress: Address;
   now: number;
   busy: boolean;
   onCancel: () => void;
@@ -713,6 +769,8 @@ function RevokeConfirmModal({
   }, [onCancel]);
 
   const expired = Number(session.expiresAt) * 1000 <= now;
+  const { labels } = useKeyLabels();
+  const label = getKeyLabel(labels, vaultAddress, session.key);
 
   return (
     <div
@@ -736,6 +794,12 @@ function RevokeConfirmModal({
             <span>Key</span>
             <span>{shortenAddress(session.key)}</span>
           </div>
+          {label !== null && (
+            <div className="confirm-row">
+              <span>Name</span>
+              <span>{label}</span>
+            </div>
+          )}
           <div className="confirm-row">
             <span>Spent</span>
             <span>
@@ -777,6 +841,18 @@ function RevokeConfirmModal({
 // ---------------------------------------------------------------------------
 function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData; vaultAddress: Address; isOwner: boolean; now: number }) {
   const [revoking, setRevoking] = useState<string | null>(null);
+  const { labels, saveLabel } = useKeyLabels();
+  const sortedSessions = useMemo(
+    () =>
+      [...vault.sessions].sort((a, b) =>
+        a.spent === b.spent ? 0 : a.spent < b.spent ? 1 : -1,
+      ),
+    [vault.sessions],
+  );
+  const totalSpent = useMemo(
+    () => vault.sessions.reduce((sum, s) => sum + s.spent, 0n),
+    [vault.sessions],
+  );
   const revokeFlow = useWriteFlow(() => {
     vault.refresh();
     setRevoking(null);
@@ -808,15 +884,25 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
           one above: a key, its recipients, its caps, and its expiry.
         </div>
       ) : (
-        vault.sessions.map((session) => (
-          <SessionRow
-            key={session.key}
-            session={session}
-            isOwner={isOwner}
-            now={now}
-            onAskRevoke={() => setRevoking(session.key.toLowerCase())}
-          />
-        ))
+        <>
+          <p className="sessions-summary">
+            {formatTusd8(totalSpent)} tUSD8 spent in total across {vault.sessions.length}{" "}
+            {vault.sessions.length === 1 ? "key" : "keys"}, most spending first.
+          </p>
+          {sortedSessions.map((session) => (
+            <SessionRow
+              key={session.key}
+              session={session}
+              label={getKeyLabel(labels, vaultAddress, session.key)}
+              totalSpent={totalSpent}
+              onSaveLabel={(name) => saveLabel(vaultAddress, session.key, name)}
+              isOwner={isOwner}
+              now={now}
+              onAskRevoke={() => setRevoking(session.key.toLowerCase())}
+            />
+          ))}
+          <p className="field-hint">Key names are stored only in this browser.</p>
+        </>
       )}
 
       <TxStatus
@@ -828,6 +914,7 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
       {revokingSession !== null && (
         <RevokeConfirmModal
           session={revokingSession}
+          vaultAddress={vaultAddress}
           now={now}
           busy={revokeFlow.phase === "signing" || revokeFlow.phase === "confirming"}
           onCancel={() => setRevoking(null)}
@@ -847,32 +934,44 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
 
 function SessionRow({
   session,
+  label,
+  totalSpent,
+  onSaveLabel,
   isOwner,
   now,
   onAskRevoke,
 }: {
   session: SessionState;
+  label: string | null;
+  totalSpent: bigint;
+  onSaveLabel: (name: string) => void;
   isOwner: boolean;
   now: number;
   onAskRevoke: () => void;
 }) {
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState("");
   const expired = Number(session.expiresAt) * 1000 <= now;
   const status = !session.active ? "Revoked" : expired ? "Expired" : "Active";
   const spentPct =
     session.spendCap > 0n ? Number((session.spent * 10000n) / session.spendCap) / 100 : 0;
+  const sharePct = totalSpent > 0n ? Number((session.spent * 1000n) / totalSpent) / 10 : 0;
 
   return (
     <div className="session-row">
       <div className="session-top">
-        <a
-          className="session-key"
-          href={explorerAddressUrl(session.key)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span className="session-key-full">{session.key}</span>
-          <span className="session-key-short">{shortenAddress(session.key)}</span>
-        </a>
+        <div className="session-identity">
+          {label !== null && <span className="session-label">{label}</span>}
+          <a
+            className="session-key"
+            href={explorerAddressUrl(session.key)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span className="session-key-full">{session.key}</span>
+            <span className="session-key-short">{shortenAddress(session.key)}</span>
+          </a>
+        </div>
         <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
       </div>
       <div className="session-meta">
@@ -883,6 +982,11 @@ function SessionRow({
         <span>
           Remaining <strong>{formatTusd8(session.remainingCap)} tUSD8</strong>
         </span>
+        {totalSpent > 0n && (
+          <span>
+            Share of all spending <strong>{sharePct.toFixed(1)}%</strong>
+          </span>
+        )}
         <span>
           Max per payment <strong>{formatTusd8(session.maxPerTx)} tUSD8</strong>
         </span>
@@ -916,6 +1020,47 @@ function SessionRow({
           </a>
         ))}
       </div>
+      {editingName ? (
+        <div className="name-editor">
+          <input
+            className="input"
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            placeholder="e.g. Trading bot"
+            maxLength={60}
+            autoFocus
+            aria-label="Key name"
+          />
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => {
+              onSaveLabel(draftName);
+              setEditingName(false);
+            }}
+          >
+            Save name
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => setEditingName(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="name-link"
+          onClick={() => {
+            setDraftName(label ?? "");
+            setEditingName(true);
+          }}
+        >
+          {label === null ? "Name this key" : "Rename"}
+        </button>
+      )}
       {isOwner && session.active && (
         <div className="session-actions">
           <button type="button" className="btn btn-outline btn-sm" onClick={onAskRevoke}>
@@ -966,7 +1111,9 @@ function AgentPanel({
         );
       }
       if (vault.balance !== null && parsed > vault.balance) {
-        problems.push("The vault does not hold that much tUSD8 right now.");
+        problems.push(
+          `This payment of ${formatTusd8(parsed)} tUSD8 exceeds the vault balance of ${formatTusd8(vault.balance)} tUSD8. The owner needs to deposit ${formatTusd8(parsed - vault.balance)} tUSD8 more before this payment can go through.`,
+        );
       }
     }
     if (recipient !== "" && !mySession.recipients.some((r) => r.toLowerCase() === recipient.toLowerCase())) {

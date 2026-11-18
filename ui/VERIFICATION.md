@@ -344,3 +344,33 @@ The stranger run proved deposit and grant gating. Zero horizontal overflow
 and zero page errors in all four runs. Screenshots in `verification/`:
 factory-desktop-disconnected, factory-owner-yourvault, factory-revoke-modal,
 factory-mobile-bar, factory-mobile-modal.
+
+Key names, quick amounts, and error wording round (18 Nov 2026, afternoon WAT)
+
+The deposit form gained 20%, 50%, and Max quick amounts computed from the
+wallet balance (exact base-unit math, no grouping in the filled value), and
+its copy now states top-ups are unlimited. The grant form gained an optional
+key-name field; the name appears in the review box, is saved to localStorage
+when the grant is submitted (keyed by vault and key address), and shows in
+the sessions list, in the revoke pop-up facts, and beside a Rename control
+on each session card. Names live only in the browser, and the panel says so.
+The sessions list is sorted most-spending first with a totals line (amount
+spent across all keys) and a per-key share of all spending. The revoke
+pop-up buttons are now equal width on desktop as well as mobile. The
+vault-balance error is now concrete everywhere it appears: the pay panel
+and the agent script pre-flight name the payment, the vault balance, and
+the exact shortfall; the on-chain revert keeps its plain-language mapping.
+The agent suite stays 88/88.
+
+Verified with a Playwright script against the Pages export served locally
+under `/Spendguard`, live RPC through a Node fetch proxy, and mock injected
+wallets (owner and session-key holder): 14 checks pass, including exact
+chip values from a 2.75 tUSD8 wallet, the grant review name row, the
+0.65 tUSD8 / 3-key breakdown in most-spending order, rename persistence
+across a reload, and the professional balance message with the 0.35 tUSD8
+shortfall blocking the pay button. The 41-check factory suite was re-run
+against this build with no regressions. Known pre-existing console error,
+unchanged by this round: React hydration error #418 fires on a reload when
+a wallet connection was persisted (wagmi restores the connected state
+before hydration); React recovers client-side and every flow works.
+Screenshot in `verification/`: factory-labels-sessions.
