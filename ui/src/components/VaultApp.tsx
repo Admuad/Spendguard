@@ -1955,40 +1955,41 @@ function VaultBar({
           </button>
         )}
       </div>
-      <p className="vault-context">
-        {isDemo ? (
-          <>
-            <span className="demo-badge">Demo</span> This is the project&apos;s
-            demo vault. Its funds belong to the demo, not to you. Create your
-            own vault to manage your own funds, or explore this one read-only.
-            Vault{" "}
-            <a href={explorerAddressUrl(selected)} target="_blank" rel="noreferrer">
-              {shortenAddress(selected)}
-            </a>
-            {vaultOwner !== null && (
-              <>
+      <div className="vault-context">
+        {isDemo && <span className="demo-badge">Demo</span>}
+        <div className="vault-context-body">
+          <p className="vault-context-text">
+            {isDemo
+              ? "This is the project's demo vault. Its funds belong to the demo, not to you. Create your own vault to manage your own funds, or explore this one read-only."
+              : "Your vault. You own it: only you can deposit, grant keys, pause, and withdraw. The demo vault stays separate."}
+          </p>
+          <p className="vault-context-meta">
+            <span className="vault-context-addr">
+              Vault{" "}
+              <a href={explorerAddressUrl(selected)} target="_blank" rel="noreferrer">
+                {shortenAddress(selected)}
+              </a>
+            </span>
+            {isDemo && vaultOwner !== null && (
+              <span className="vault-context-addr">
                 {" "}· Owner{" "}
                 <a href={explorerAddressUrl(vaultOwner)} target="_blank" rel="noreferrer">
                   {shortenAddress(vaultOwner)}
                 </a>
-              </>
+              </span>
             )}
-          </>
-        ) : (
-          <>
-            Your vault. You own it: only you can deposit, grant keys, pause,
-            and withdraw. The demo vault stays separate. Vault{" "}
-            <a href={explorerAddressUrl(selected)} target="_blank" rel="noreferrer">
-              {shortenAddress(selected)}
-            </a>
-          </>
-        )}
-      </p>
+          </p>
+        </div>
+      </div>
       {!isConnected && (
-        <p className="vault-context">
-          Connect a wallet to create your own vault. Until then you are
-          viewing the demo vault.
-        </p>
+        <div className="vault-context">
+          <div className="vault-context-body">
+            <p className="vault-context-text">
+              Connect a wallet to create your own vault. Until then you are
+              viewing the demo vault.
+            </p>
+          </div>
+        </div>
       )}
       <TxStatus
         phase={createPhase}

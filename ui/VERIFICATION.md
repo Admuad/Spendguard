@@ -515,3 +515,30 @@ green: factory-verify, labels-chips-verify, edit-verify, and the
 mobile Claude-corrections checklist. Screenshots in `verification/`:
 dash-before-360/390/430/390-dark, dash-after-360/390/430/390-dark,
 dash-after-1440.
+
+## Step cards + vault bar round (18 Nov 2026, evening WAT)
+
+Muhammed photographed two more card problems from his laptop. (1) In
+"From zero to a working session" the cards in a row had different
+heights, leaving dead space under the short ones. Cause: the cards sit
+inside Reveal wrappers, which are the grid items; the wrappers
+stretched to the row height but the cards inside sized to their
+content. Fix: `.steps .step-card, .cap-grid .cap-card, .bento-grid
+.bento-card { height: 100%; }`, so every card fills its wrapper. The
+same fix covers the How-it-works cards and the capability/bento cards.
+(2) In the vault bar, the Demo badge sat inside a run-on sentence and
+the vault/owner addresses dangled at the end of it, wrapping
+mid-address on narrow screens. Fix: the context is now a flex row with
+the badge beside a text block (wrapped lines align with the text), the
+addresses moved to their own smaller meta line, and each Vault/Owner
+pair is nowrap so the line wraps between pairs, never mid-address. The
+bar padding and row gap were also brought onto the 8/12/16/24 scale
+(16/24px padding, 12px gap).
+
+Verified with section screenshots at 1440/768/390px: step rows are
+equal height at every width, the vault bar reads cleanly connected and
+disconnected, and the meta line holds on one line at 390px. Regression
+suites all green: factory-verify, labels-chips-verify, edit-verify,
+and the mobile Claude-corrections checklist. Screenshots in
+`verification/`: steps-after-1440/768/390, howitworks-after-1440,
+vaultbar-after-1440/390, vaultbar-after-390-disconnected.

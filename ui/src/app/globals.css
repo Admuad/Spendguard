@@ -1051,6 +1051,16 @@ summary:focus-visible,
   grid-template-columns: repeat(2, 1fr);
 }
 
+/* Cards sit inside Reveal wrappers, which are the grid items. The
+   wrappers stretch to the row height, but the cards inside them size
+   to their content unless told otherwise, leaving dead space under
+   short cards and ragged rows. Fill the wrapper. */
+.steps .step-card,
+.cap-grid .cap-card,
+.bento-grid .bento-card {
+  height: 100%;
+}
+
 .setup-net {
   margin-top: 16px;
   background: var(--surface-2);
@@ -2582,14 +2592,14 @@ summary:focus-visible,
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-row);
-  padding: 18px 22px;
+  padding: 16px 24px;
   margin-bottom: 24px;
 }
 
 .vault-bar-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -2630,11 +2640,36 @@ summary:focus-visible,
   margin-left: auto;
 }
 
+/* The badge sits beside the text block, not inside the sentence, so
+   wrapped lines align with the text, and the vault/owner addresses get
+   their own meta line instead of dangling at the end of the sentence. */
 .vault-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   margin: 12px 0 0;
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-2);
+}
+
+.vault-context-body {
+  min-width: 0;
+}
+
+.vault-context-text {
+  margin: 0;
+}
+
+.vault-context-meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+/* An address never breaks mid-string; the line wraps between the
+   Vault and Owner pairs instead. */
+.vault-context-addr {
+  white-space: nowrap;
 }
 
 .vault-context a {
@@ -2643,6 +2678,7 @@ summary:focus-visible,
 }
 
 .demo-badge {
+  flex-shrink: 0;
   display: inline-block;
   background: var(--accent-soft);
   color: var(--accent);
@@ -2653,8 +2689,7 @@ summary:focus-visible,
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-right: 6px;
-  vertical-align: 1px;
+  margin-top: 1px;
 }
 
 /* Grant warnings: the three risks a grant carries. */
