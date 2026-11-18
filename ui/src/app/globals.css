@@ -6,6 +6,14 @@
 :root {
   --accent: #0346ff;
   --accent-2: #0046c3;
+  /* Card system (one scale, no drift): outer cards 24, rows 18, inner
+     tiles 16, controls 14, small chips 12. Hero gradient bands keep
+     their own 28px radius. Spacing scale: 8 / 12 / 16 / 24. */
+  --radius-card: 24px;
+  --radius-row: 18px;
+  --radius-tile: 16px;
+  --radius-control: 14px;
+  --radius-sm: 12px;
   --accent-soft: rgba(3, 70, 255, 0.08);
   --bg: #ffffff;
   --bg-soft: #f5f6f8;
@@ -357,7 +365,7 @@ summary:focus-visible,
   display: none;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -502,10 +510,10 @@ summary:focus-visible,
   max-width: 980px;
   background: var(--surface);
   color: var(--text);
-  border-radius: 28px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-dash);
-  padding: 28px 32px 24px;
+  padding: 24px;
   text-align: left;
   position: relative;
   z-index: 2;
@@ -514,9 +522,9 @@ summary:focus-visible,
 .dash-head {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
-  padding-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -580,21 +588,26 @@ summary:focus-visible,
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
+/* Dashboard tiles: flat fills, no borders, so only the outer card has an
+   outline. Every tile has the same three rows: label, value, one-line
+   footnote. Spacing follows the 8/12/16/24 scale; tile radius 16 is the
+   outer card radius 24 minus the 8px step. */
 .kpi {
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 18px 20px;
+  border: none;
+  border-radius: var(--radius-tile);
+  padding: 16px;
+  min-width: 0;
 }
 
 .kpi-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-2);
-  margin: 0 0 6px;
+  margin: 0 0 8px;
 }
 
 .kpi-value {
@@ -603,6 +616,21 @@ summary:focus-visible,
   letter-spacing: -0.02em;
   line-height: 1.15;
   margin: 0;
+  min-width: 0;
+}
+
+/* The balance leads: larger value than the other tiles. */
+.kpi-hero .kpi-value {
+  font-size: 34px;
+}
+
+/* Addresses are data, not display text: small, one line, truncated. */
+.kpi-owner .kpi-value {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-value small {
@@ -615,12 +643,14 @@ summary:focus-visible,
 .kpi-foot {
   font-size: 13px;
   color: var(--text-2);
-  margin: 6px 0 0;
-  overflow-wrap: anywhere;
+  margin: 8px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dash-activity {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .dash-activity h3 {
@@ -670,7 +700,7 @@ summary:focus-visible,
 .empty-state {
   padding: 22px;
   border: 1px dashed var(--border-strong);
-  border-radius: 16px;
+  border-radius: var(--radius-tile);
   color: var(--text-2);
   font-size: 15px;
   text-align: center;
@@ -716,7 +746,7 @@ summary:focus-visible,
   gap: 0;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
@@ -775,7 +805,7 @@ summary:focus-visible,
 .about-stat {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-row);
   padding: 22px 26px;
   display: flex;
   align-items: baseline;
@@ -805,7 +835,7 @@ summary:focus-visible,
 .cap-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   padding: 30px 28px;
   box-shadow: var(--shadow-card);
 }
@@ -823,7 +853,7 @@ summary:focus-visible,
 .cap-icon {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: var(--accent-soft);
   color: var(--accent);
   display: flex;
@@ -863,7 +893,7 @@ summary:focus-visible,
 .tab-btn {
   text-align: left;
   padding: 18px 22px;
-  border-radius: 18px;
+  border-radius: var(--radius-row);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -897,7 +927,7 @@ summary:focus-visible,
 .tab-panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   padding: 32px;
   animation: tab-in 0.3s ease;
@@ -978,7 +1008,7 @@ summary:focus-visible,
 .bento-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   padding: 30px 28px;
   box-shadow: var(--shadow-card);
 }
@@ -1025,7 +1055,7 @@ summary:focus-visible,
   margin-top: 16px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 12px 14px;
   display: grid;
   gap: 8px;
@@ -1074,7 +1104,7 @@ summary:focus-visible,
 .step-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   padding: 30px 28px;
   position: relative;
   box-shadow: var(--shadow-card);
@@ -1112,7 +1142,7 @@ summary:focus-visible,
   margin-top: 24px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   padding: 28px 32px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1150,7 +1180,7 @@ summary:focus-visible,
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   padding: 28px 30px;
   box-shadow: var(--shadow-card);
 }
@@ -1198,7 +1228,7 @@ summary:focus-visible,
   background: var(--input-bg);
   color: var(--text);
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   padding: 12px 14px;
   font-size: 15.5px;
   outline: none;
@@ -1249,7 +1279,7 @@ summary:focus-visible,
 .confirm-box {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-tile);
   padding: 16px 18px;
   margin-bottom: 16px;
   font-size: 14.5px;
@@ -1285,7 +1315,7 @@ summary:focus-visible,
 .tx-status {
   margin-top: 16px;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   font-size: 14.5px;
   line-height: 1.6;
 }
@@ -1331,7 +1361,7 @@ summary:focus-visible,
   margin-top: 12px;
   padding: 12px 14px;
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: var(--surface-2);
   font-size: 14.5px;
 }
@@ -1339,7 +1369,7 @@ summary:focus-visible,
 /* Session list */
 .session-row {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-row);
   padding: 18px 20px;
   margin-bottom: 14px;
   background: var(--surface);
@@ -1471,7 +1501,7 @@ summary:focus-visible,
   flex-wrap: wrap;
   background: var(--warning-bg);
   border: 1px solid transparent;
-  border-radius: 18px;
+  border-radius: var(--radius-row);
   padding: 18px 22px;
   margin-bottom: 24px;
   font-size: 15px;
@@ -1497,7 +1527,7 @@ summary:focus-visible,
 .faq-item {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-row);
   overflow: hidden;
 }
 
@@ -1682,7 +1712,7 @@ summary:focus-visible,
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
   width: 100%;
   max-width: 720px;
@@ -1739,13 +1769,13 @@ summary:focus-visible,
   width: 100%;
   aspect-ratio: 16 / 9;
   border: none;
-  border-radius: 16px;
+  border-radius: var(--radius-tile);
   background: #000;
 }
 
 .modal-placeholder {
   aspect-ratio: 16 / 9;
-  border-radius: 16px;
+  border-radius: var(--radius-tile);
   background: linear-gradient(120deg, #000a23 0%, #002c90 60%, #2384ff 100%);
   color: #fff;
   display: flex;
@@ -1802,6 +1832,33 @@ summary:focus-visible,
   }
   .dash-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  /* Two-column dashboard: hero on its own row, the pair side by side,
+     the owner as one compact row. A lone last tile always spans the
+     row, so adding or removing a tile later can never orphan one. */
+  .dash-grid > .kpi-hero {
+    grid-column: 1 / -1;
+  }
+  .dash-grid > .kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .dash-grid > .kpi-owner {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  .kpi-owner .kpi-label {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .kpi-owner .kpi-value {
+    text-align: right;
+  }
+  .kpi-owner .kpi-foot {
+    display: none;
   }
   .tabs {
     grid-template-columns: 1fr;
@@ -1861,7 +1918,7 @@ summary:focus-visible,
     font-size: 16px;
     font-weight: 600;
     padding: 13px 16px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     background: none;
     border: none;
     cursor: pointer;
@@ -1904,10 +1961,16 @@ summary:focus-visible,
     gap: 12px;
   }
   .kpi {
-    padding: 14px 16px;
+    padding: 16px;
   }
   .kpi-value {
     font-size: 24px;
+  }
+  .kpi-hero .kpi-value {
+    font-size: 28px;
+  }
+  .kpi-foot {
+    font-size: 12px;
   }
   .stat-strip {
     grid-template-columns: 1fr 1fr;
@@ -2048,21 +2111,11 @@ summary:focus-visible,
 
   /* Dashboard: balance spans the full width, the rest pair up. */
   .dash-card {
-    padding: 20px 16px;
+    padding: 16px;
     margin-top: 40px;
   }
-  .dash-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .dash-grid .kpi:first-child {
-    grid-column: 1 / -1;
-  }
-  .dash-grid .kpi:first-child .kpi-value {
-    font-size: 28px;
-  }
-  .kpi {
-    padding: 14px;
+  .kpi-label {
+    font-size: 12px;
   }
   .kpi-value {
     font-size: 22px;
@@ -2299,7 +2352,7 @@ summary:focus-visible,
     display: block;
     background: var(--surface);
     border: 1px dashed var(--border-strong);
-    border-radius: 18px;
+    border-radius: var(--radius-row);
     padding: 18px;
     text-align: center;
     margin-bottom: 20px;
@@ -2404,7 +2457,7 @@ summary:focus-visible,
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
   }
 
   .mobile-action-tab[aria-pressed="true"] {
@@ -2528,7 +2581,7 @@ summary:focus-visible,
 .vault-bar {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-row);
   padding: 18px 22px;
   margin-bottom: 24px;
 }
@@ -2608,7 +2661,7 @@ summary:focus-visible,
 .warn-box {
   background: var(--warning-bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-tile);
   padding: 16px 18px;
   margin-bottom: 16px;
   font-size: 14.5px;

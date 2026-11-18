@@ -100,7 +100,7 @@ export function Hero({
           </div>
 
           <div className="dash-grid">
-            <div className="kpi">
+            <div className="kpi kpi-hero">
               <p className="kpi-label">Vault balance</p>
               <p className="kpi-value">
                 {vault.balance === null ? "…" : formatTusd8(vault.balance)}
@@ -118,11 +118,11 @@ export function Hero({
             <div className="kpi">
               <p className="kpi-label">Payments executed</p>
               <p className="kpi-value">{vault.loading ? "…" : vault.paymentsCount}</p>
-              <p className="kpi-foot">On-chain, all within caps</p>
+              <p className="kpi-foot">All within caps</p>
             </div>
-            <div className="kpi">
+            <div className="kpi kpi-owner">
               <p className="kpi-label">Vault owner</p>
-              <p className="kpi-value" style={{ fontSize: 22, overflowWrap: "anywhere" }}>
+              <p className="kpi-value">
                 {vault.owner ? shortenAddress(vault.owner) : "…"}
               </p>
               <p className="kpi-foot">Grants, revokes, pause, sweep</p>

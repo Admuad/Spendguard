@@ -460,3 +460,58 @@ spending history: 0.30 / 0.25 / 0.10 tUSD8); the temporary build was
 discarded and the real build rebuilt. Screenshots in `verification/`:
 factory-usage-mobile, factory-edit-modal-mobile, usage-filled-desktop,
 usage-filled-mobile.
+
+## Card placement round (18 Nov 2026, evening WAT)
+
+Muhammed's second Claude review (partial response; his Claude usage
+limit ran out mid-reply) diagnosed the dashboard from a screenshot:
+the owner tile was orphaned with a hole beside it, the owner address
+wrapped mid-string, tile footnotes wrapped to different line counts,
+every tile had equal weight, and gaps/padding/radii did not follow one
+scale. Claude's five fixes were implemented against the real class
+names (his snippet guessed them from an earlier version of the code):
+
+1. Orphan: at two-column widths the dashboard is now hero row, pair
+   row, owner row. The owner is a compact full-width row (label left,
+   address right). A `:last-child:nth-child(odd)` guard spans any lone
+   last tile, so adding or removing a tile later can never orphan one.
+2. Address: the owner value is 16px, nowrap, ellipsis, at every width.
+   The old inline 22px style with `overflow-wrap: anywhere` is gone.
+3. Same structure: every tile is label, value, one-line footnote
+   (nowrap + ellipsis). The payments footnote was shortened to "All
+   within caps" so it fits at 360px without truncating, and tile labels
+   drop to 12px at 640px and below so "Payments executed" stays on one
+   line.
+4. Balance leads: the hero tile is full-width at two-column widths and
+   has the larger value (34px desktop, 28px mobile). All tiles are flat
+   fills with no border; only the outer card has an outline.
+5. One scale: gaps and padding on the dashboard now use 8/12/16/24
+   only (the 10px mobile gap, 14px/18px/20px paddings and 6px margins
+   are gone). Outer card radius 24, tile radius 16.
+
+Card audit (rest of the app): every card style was listed. The system
+was already grouped, so no redesign was needed: outer cards
+(panel, cap-card, bento-card, step-card, tab-panel, modal, stat-strip,
+dash-card) at radius 24 with border + shadow; rows (tab-btn,
+session-row, faq-item, net-banner) at 18; inner tiles (kpi,
+empty-state, confirm-box, warn-box, modal-video) at 16; controls at
+14; small chips at 12; hero gradient bands (stats-band, cta-banner) at
+28 by design. Radii are now CSS variables (--radius-card/row/tile/
+control/sm) so they cannot drift apart. The two 20px outliers
+(about-stat, vault-bar) joined the 18px row family; the floating menu
+keeps its own 20px and the tab-list keeps its 22px responsive override.
+Padding drift (22/26/28/30/32px in a few sections) was left alone on
+purpose: those sections are verified and liked as they are, and padding
+changes would alter their look without a screenshot-driven reason.
+Claude's full response, when it arrives, can propose padding changes
+with before/after shots. The mobile redesign (bottom bar, segmented
+control, one panel at a time) was not touched.
+
+Verified with the dashboard screenshot script at 360/390/430px (light)
+plus a dark pass at 390px and a desktop pass at 1440px, all against
+live chain data: no orphan at any width, no wrapped address, all foots
+on one line, hero leading, dark theme holding. Regression suites all
+green: factory-verify, labels-chips-verify, edit-verify, and the
+mobile Claude-corrections checklist. Screenshots in `verification/`:
+dash-before-360/390/430/390-dark, dash-after-360/390/430/390-dark,
+dash-after-1440.
