@@ -268,7 +268,7 @@ contract SpendGuardInvariantTest is StdInvariant, Test {
         token.mint(owner, 100_000_000_000);
         token.mint(attacker, 100_000_000_000);
         vm.prank(owner);
-        vault = new SpendGuard(address(token));
+        vault = new SpendGuard(address(token), owner);
         vm.prank(owner);
         token.approve(address(vault), type(uint256).max);
         vm.prank(attacker);

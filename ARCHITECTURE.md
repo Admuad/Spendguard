@@ -21,10 +21,23 @@ Off-chain (convenience only, never trusted for security):
   Agent script: holds ONLY the session key; calls executePayment.
 ```
 
-One contract, one token, no proxies, no upgrades. The vault holds tUSD8 and
-enforces every bound on-chain. The UI and agent script are convenience layers:
+Two contracts, one token, no proxies, no upgrades. Each user gets their own
+vault from the factory; the vault holds tUSD8 and enforces every bound
+on-chain. The factory only creates vaults and records who owns which: it
+holds no funds, has no owner, and cannot touch a vault after creation. The UI and agent script are convenience layers:
 a compromised frontend cannot make the vault pay outside a session key's
 bounds, because every check lives in `executePayment`.
+
+## Contract: SpendGuardFactory
+
+`src/SpendGuardFactory.sol` — one function that matters: `createVault()`
+deploys a full `SpendGuard` with the caller as owner, records it in
+`vaultsOf(caller)` and `allVaults`, and emits `VaultCreated`. Views:
+`vaultsOf(owner)`, `vaultCount()`, `allVaults(i)`, `token()`. No admin
+functions, no pause, no upgrade path, no funds. Full deployments (not
+minimal-proxy clones) are deliberate: no initializer pattern, no proxy
+storage-layout risk, and the vault logic stays exactly the code the test
+suite proves. Clones are a roadmap gas optimisation.
 
 ## Contract: SpendGuard
 

@@ -4,7 +4,7 @@
 `0x456569838f1d43009A91ebA4263147Afd7233483` (6 decimals).
 **Status:** Security specification for the implementation in this repo.
 The implementation must satisfy every invariant below; a violation is a bug.
-**Version:** 2.0 — 2026-11-18 (in-window build; v1.0 was the 10 Nov prep draft).
+**Version:** 2.2 — 2026-11-18 (factory model: per-user vaults, INV-18, R-11; v2.1 was the fork-verified token behavior update).
 
 ## 1. System overview
 
@@ -22,6 +22,18 @@ most its remaining cap, and the owner can revoke it instantly.
 | `grantSession` / `revokeSession` / `pause` / `unpause` | Owner only | Security-state changes |
 
 Every state-changing operation emits an event — the on-chain audit trail.
+
+### Vaults are per-user (factory model, 18 Nov 2026)
+
+`SpendGuardFactory` creates one independent vault per user: the caller of
+`createVault` becomes that vault's owner. Vaults are full deployments, not
+proxies, and share nothing: no shared pool, no per-user ledger. One vault
+can never spend, sweep, pause, or read another vault's funds or sessions
+(INV-18). The factory holds no funds, has no owner, and owns no vault; it
+cannot move funds under any circumstances. The demo vault on the homepage
+is one ordinary vault owned by the project wallet; the UI labels it as a
+demo and locks its deposit panel to its owner, so visitors cannot mistake
+it for their own vault or deposit into it by accident.
 
 ### Actors
 
@@ -78,6 +90,7 @@ pause, sweep) and recover what is left.
 | A-10 | Abusive grant parameters (zero cap, per-tx > cap, past expiry, empty allowlist, silent overwrite of a live key) | INV-11 | Invalid grants revert at grant time |
 | A-11 | Unlimited-approval abuse | INV-13 (no approvals granted; exact-amount pulls only) | No approval exists to exploit |
 | A-12 | Impersonation: calling `executePayment` naming another key | INV-14 (`msg.sender == sessionKey`) | Reverts; victim key untouched |
+| A-13 | Cross-vault spend, sweep, grant, or pause (key or owner of vault A acting on vault B) | INV-18, INV-12, INV-14 | Reverts; victim vault untouched |
 
 ## 3. Invariants
 
@@ -100,6 +113,7 @@ pause, sweep) and recover what is left.
 | INV-15 | Events for every state-changing operation, with full parameters. No silent state change. |
 | INV-16 | `spent` is monotonic per key and resets only by a fresh grant after revocation (which starts a new session at `spent == 0`). |
 | INV-17 | The vault's token balance is the single source of truth for solvency. No payment succeeds when the balance is below `amount`. |
+| INV-18 | Vault isolation: no vault's funds, sessions, or admin powers are reachable from any other vault or from the factory. Each vault's owner, sessions, and balance are independent; the factory holds no funds and owns no vault. |
 
 ### Addendum (18 Nov 2026, from the starter-kit read)
 
@@ -161,6 +175,7 @@ test.
 | R-8 | Privacy: all session state is public | Transparency is the audit trail | Accepted; no privacy claimed |
 | R-9 | Griefing/social engineering of the owner | Operational, not contractual | Owner discipline |
 | R-10 | Compiler / library / EVM platform risk | Out of scope for this build | Audited OpenZeppelin primitives, pinned solc, full test suite |
+| R-11 | Pooled deposits within one vault | `deposit` stays permissionless by design (anyone may top up a vault); deposits join that vault's single pool with no per-depositor ledger, so a non-owner deposit is spendable by the owner's keys and sweepable by the owner | UI gates each vault's deposit panel to its owner and labels the demo vault; the factory model bounds the exposure to one vault at a time |
 
 ## 6. Verification items
 
@@ -191,5 +206,8 @@ test.
   exact amounts, no hooks, no blacklist, pause exists but inactive,
   EIP-3009 absent, EIP-2612 present; A-1 corrected, A-2 dead, V-1..V-3
   closed, V-13/V-14 added).
+- v2.2 — 2026-11-18 (factory model: SpendGuardFactory creates one vault per
+  user, constructor takes the owner, INV-18 + A-13 + R-11 added, 11 factory
+  isolation tests; demo-vault UI labelling and deposit gating recorded).
 - Record future changes here with date and outcome. Do not silently edit
   the invariant list.

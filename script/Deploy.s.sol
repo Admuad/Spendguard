@@ -21,7 +21,7 @@ contract Deploy is Script {
         require(token != address(0), "TUSD8_ADDRESS unset");
 
         vm.startBroadcast(deployerKey);
-        SpendGuard vault = new SpendGuard(token);
+        SpendGuard vault = new SpendGuard(token, vm.addr(deployerKey));
         vm.stopBroadcast();
 
         console.log("SpendGuard deployed at:", address(vault));

@@ -172,7 +172,7 @@ contract MaliciousOwner {
     uint256 public reentrySuccesses;
 
     constructor(address token) {
-        vault = new SpendGuard(token);
+        vault = new SpendGuard(token, address(this));
     }
 
     function deposit(uint256 amount) external {

@@ -14,6 +14,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// cap, before an expiry. Every bound is enforced on-chain; the owner can revoke
 /// instantly and can always sweep the remaining balance, paused or not.
 ///
+/// Each user gets their OWN vault through SpendGuardFactory: the factory passes
+/// the caller as the vault owner, so one user's vault can never touch another
+/// user's funds. Vaults are fully independent contracts; there is no shared
+/// pool and no per-user ledger. The demo vault shown on the homepage is one
+/// such vault, owned by the project wallet.
+///
 /// Security specification: THREAT-MODEL.md. Invariant numbers in comments below
 /// (INV-1..INV-17) refer to that document.
 ///
@@ -77,7 +83,11 @@ contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
     error InsufficientVaultBalance();
 
     /// @param token_ The ERC-20 this vault holds. Must not be the zero address.
-    constructor(address token_) Ownable(msg.sender) {
+    /// @param owner_ The vault owner. OpenZeppelin Ownable reverts on the
+    /// zero address, so no separate check is needed here. Only the owner
+    /// grants, revokes, pauses, and sweeps. SpendGuardFactory passes the
+    /// caller as owner, so each user owns their own vault outright.
+    constructor(address token_, address owner_) Ownable(owner_) {
         if (token_ == address(0)) revert ZeroAddress();
         token = IERC20(token_);
     }

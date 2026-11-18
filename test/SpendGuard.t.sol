@@ -42,7 +42,7 @@ contract SpendGuardTest is Test {
         token = new MockERC20();
         token.mint(owner, 10_000_000_000); // 10,000 tUSD8
         vm.prank(owner);
-        vault = new SpendGuard(address(token));
+        vault = new SpendGuard(address(token), owner);
         expiry = uint64(block.timestamp + 3600);
         _depositAs(owner, VAULT_FUNDS);
     }
@@ -104,7 +104,12 @@ contract SpendGuardTest is Test {
 
     function test_ConstructorZeroTokenReverts() public {
         vm.expectRevert(SpendGuard.ZeroAddress.selector);
-        new SpendGuard(address(0));
+        new SpendGuard(address(0), owner);
+    }
+
+    function test_ConstructorZeroOwnerReverts() public {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
+        new SpendGuard(address(token), address(0));
     }
 
     function test_ZeroDepositReverts() public {
@@ -188,7 +193,7 @@ contract SpendGuardTest is Test {
         MockHookERC20 hookToken = new MockHookERC20();
         hookToken.mint(owner, 1_000_000_000);
         vm.prank(owner);
-        SpendGuard hookVault = new SpendGuard(address(hookToken));
+        SpendGuard hookVault = new SpendGuard(address(hookToken), owner);
         vm.startPrank(owner);
         hookToken.approve(address(hookVault), VAULT_FUNDS);
         hookVault.deposit(VAULT_FUNDS);
@@ -486,7 +491,7 @@ contract SpendGuardTest is Test {
         MockNonRevertingERC20 badToken = new MockNonRevertingERC20();
         badToken.mint(owner, 1_000_000_000);
         vm.prank(owner);
-        SpendGuard badVault = new SpendGuard(address(badToken));
+        SpendGuard badVault = new SpendGuard(address(badToken), owner);
         // No approval: transferFrom returns false instead of reverting.
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(badToken)));
@@ -498,7 +503,7 @@ contract SpendGuardTest is Test {
         MockNonRevertingERC20 flaky = new MockNonRevertingERC20();
         flaky.mint(owner, 1_000_000_000);
         vm.prank(owner);
-        SpendGuard flakyVault = new SpendGuard(address(flaky));
+        SpendGuard flakyVault = new SpendGuard(address(flaky), owner);
         vm.startPrank(owner);
         flaky.approve(address(flakyVault), VAULT_FUNDS);
         flakyVault.deposit(VAULT_FUNDS);
