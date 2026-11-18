@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- Source layout for ui/public/og-image.png (1200x630). Re-render with a
+     headless browser screenshot at exactly 1200x630 if the headline or
+     brand changes. See BRANDING.md. -->
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: 'Inter Tight'; src: url('../ui/src/app/fonts/inter-tight-latin.woff2') format('woff2'); font-weight: 100 900; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; width: 1200px; height: 630px; overflow: hidden;
+  background: linear-gradient(125deg, #00081d 0%, #001233 38%, #002c90 66%, #2384ff 125%);
+  color: #fff; font-family: 'Inter Tight', sans-serif;
+  padding: 56px 64px; display: flex; flex-direction: column;
+}
+.lockup { display: flex; align-items: center; gap: 16px; }
+.wordmark { font-size: 40px; font-weight: 600; letter-spacing: -0.02em; }
+.headline {
+  margin: 64px 0 0; max-width: 990px;
+  font-size: 74px; line-height: 1.12; font-weight: 500; letter-spacing: -0.02em;
+}
+.chips { margin-top: 44px; display: flex; gap: 14px; }
+.chip {
+  padding: 12px 22px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.10);
+  font-size: 23px; font-weight: 500;
+}
+.footer { margin-top: auto; font-size: 24px; color: rgba(255,255,255,0.82); }
+.footer b { color: #fff; font-weight: 600; }
+</style></head><body>
+  <div class="lockup">
+    <img src="../ui/public/brand/logo-mark.svg" width="56" height="56" alt="">
+    <span class="wordmark">SpendGuard</span>
+  </div>
+  <div class="headline">Give an agent a key that can only spend a little.</div>
+  <div class="chips">
+    <span class="chip">Per-transaction cap</span>
+    <span class="chip">Total spend cap</span>
+    <span class="chip">Expiry</span>
+  </div>
+  <div class="footer"><b>Scoped session-key vault</b> for tUSD8 on the QDay Aevum testnet</div>
+</body></html>

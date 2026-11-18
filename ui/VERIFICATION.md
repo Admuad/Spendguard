@@ -258,3 +258,34 @@ overflow, zero page errors. Page height fell from ~13,400px to
 ~10,900px (360px), ~10,300px (390px), ~9,800px (430px). Desktop 1440px
 regression: segments and bar hidden, all five panels visible, long
 subtitle shown, zero overflow. `npm run typecheck` passes.
+
+## Rebrand round (18 Nov 2026, morning WAT)
+
+The first mark (shield holding a stepped key) read as a blob at small
+sizes; Muhammed rejected it. The new mark is a white keyhole in a flat
+`#0346FF` rounded square: the square is the vault, the keyhole is the
+session key. One shape, one flat color, no gradient. The same artwork
+lives in `public/brand/logo-mark.svg`, `public/favicon.svg`, and
+`src/components/Logo.tsx`; there is no separate simplified variant.
+
+Design loop: the first keyhole draft read as an exclamation mark (stem
+too narrow). The shipped geometry widens the stem (9 units at the neck,
+16 at the base) and was inspected at 128/64/48/34/32/24/16px on light,
+dark, and surface backgrounds: the keyhole holds at every size,
+including 16px. Navbar and footer lockups inspected on light and dark.
+
+PNG derivatives were rendered from the SVG artwork at exact sizes with
+a headless browser (inline SVG; file-URL image loads are blocked from
+scripted pages, which broke the first attempt and was caught by
+inspection): `favicon-32.png` (transparent corners, verified pixel by
+pixel: `#0346FF` tile, white keyhole), `apple-touch-icon.png` 180px,
+`icon-192.png`, `icon-512.png` (opaque `#0346FF` tiles, keyhole at 60%,
+512 doubles as maskable). The OG image was rebuilt from the source
+layout in `brand/og-image.html` at exactly 1200x630 and inspected: new
+lockup, headline, three bound chips, footer line, Inter Tight loaded.
+
+`npm run typecheck` passes. The Pages export was served locally under
+the `/Spendguard` base path and screenshotted at 1440px and 390px: the
+new mark renders in the navbar and footer (2 instances in the DOM and
+in the built HTML), styled hero intact. `BRANDING.md` was rewritten for
+the new mark (meaning, files, 16px minimum, flat-tile rule, icon specs).

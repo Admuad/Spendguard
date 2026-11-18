@@ -6,35 +6,37 @@ decoration that does not earn its place.
 
 ## The mark
 
-A shield holding a session key. The key's teeth are three ascending steps,
-the three bounds every session carries: per-transaction cap, total spend
-cap, expiry. The shield is the vault; the steps are the limits.
+A white keyhole in a flat accent rounded square. The square is the vault;
+the keyhole is the session key: one opening, shaped by the bounds. One
+shape, one flat color, no gradient, no extra elements. It replaces the
+first mark (a shield holding a stepped key), which read as a blob at
+small sizes.
 
 Files:
 
 | File | Use |
 | --- | --- |
-| `ui/public/brand/logo-mark.svg` | The mark, all sizes 24px and up |
-| `ui/public/favicon.svg` | Simplified mark (solid staircase block) for 16–32px |
+| `ui/public/brand/logo-mark.svg` | The mark, every size |
+| `ui/public/favicon.svg` | The same artwork; no simplified variant is needed |
 | `ui/src/components/Logo.tsx` | The same artwork as a React component (`LogoMark`, `LogoLockup`) |
 
-The SVG file and the React component are the same artwork. Change one,
-change the other, and re-render the PNG derivatives.
+The SVG files and the React component are the same artwork. Change one,
+change all three, and re-render the PNG derivatives.
 
 **Clear space.** Keep at least one quarter of the mark's height empty on all
 sides. Nothing enters that space: no text, no rules, no other logos.
 
-**Minimum sizes.** Mark: 24px on screens. Lockup: 120px wide. Below 24px,
-use the simplified favicon artwork only, never the full mark.
+**Minimum sizes.** Mark: 16px on screens (proven at 16px; the keyhole
+holds). Lockup: 120px wide.
 
 **Lockup.** Mark + the wordmark "SpendGuard" in Inter Tight 600, tracking
 −0.02em, one word, capital S and G. The wordmark is always live text in the
 brand font, never baked into an image, so it stays crisp at every size.
 
-**Don't:** recolor the shield, rotate the mark, stretch it, add a drop
+**Don't:** recolor the tile, rotate the mark, stretch it, add a drop
 shadow to the mark itself, put it on a busy image, outline it, or pair it
-with another typeface in the lockup. The gradient always runs light
-top-left to deep bottom-right.
+with another typeface in the lockup. The tile is always flat Accent
+`#0346FF`; it never takes the hero gradient.
 
 ## Color
 
@@ -45,7 +47,7 @@ top-left to deep bottom-right.
 | Electric | `#2384FF` | Gradient start, dark-theme accents |
 | Navy 900 | `#00081D` | Hero top, dark surfaces, app-icon base |
 | Navy 800 | `#000A23` | Hero gradient, dark backgrounds |
-| Navy 700 | `#002C90` | Hero gradient mid, mark gradient end |
+| Navy 700 | `#002C90` | Hero gradient mid |
 | Page | `#FFFFFF` | Light background |
 | Surface soft | `#F5F6F8` | Cards, dashboard sub-cards |
 | Pill | `#F2F2F2` | Eyebrow pills, chips |
@@ -62,8 +64,8 @@ accent stays `#0346FF`; success/danger/warning lighten (`#4ADE80`,
 `#F87171`) so they hold contrast on dark.
 
 **Hero gradient.** `#00081D` → `#00133F` → `#002C90` → `#0346FF`, ending in
-pale `#FAFAFA` where the dashboard card overlaps. The mark gradient is the
-short form: `#2384FF` → `#0346FF` → `#002C90`, top-left to bottom-right.
+pale `#FAFAFA` where the dashboard card overlaps. The mark never takes the
+gradient; its tile is flat Accent `#0346FF`.
 
 **Don't:** introduce new hues. Green means live/verified, red means
 destructive/error, amber means caution — never decorative. Never use the
@@ -126,13 +128,16 @@ the way you would explain it to another builder.
 
 ## Link previews and icons
 
-- OG image: `ui/public/og-image.png`, 1200×630, brand gradient, mark,
-  headline, three bound chips. Re-render from the source layout if the
-  headline or brand changes.
-- Favicon: SVG (simplified mark) + 32px PNG fallback, both transparent.
-- Apple touch icon: 180×180, opaque gradient tile, mark at 60%.
+- OG image: `ui/public/og-image.png`, 1200×630, brand gradient, lockup,
+  headline, three bound chips. Source layout: `brand/og-image.html`;
+  re-render at exactly 1200×630 if the headline or brand changes.
+- Favicon: SVG (same artwork as the mark) + 32px PNG fallback, both
+  transparent outside the rounded tile.
+- Apple touch icon: 180×180, opaque `#0346FF` tile, keyhole at 60%.
 - App icons: 192×192 and 512×512, same tile; 512 doubles as the maskable
-  icon. Manifest uses relative paths so it works under any base path.
+  icon. PNG derivatives are rendered from the SVG artwork at exact sizes
+  with a headless browser. Manifest uses relative paths so it works under
+  any base path.
 - `theme-color`: `#FFFFFF` light, `#00081D` dark.
 - `robots.txt` and `sitemap.xml` live in `ui/public/` and name the
   canonical GitHub Pages URL.
