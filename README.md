@@ -7,7 +7,7 @@ SpendGuard is a scoped session-key vault for tUSD8 on the QDay Aevum testnet (ch
 Spending authority becomes a grantable, revocable, auditable object — not a shared wallet key.
 
 - **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
-- **Status:** contracts + full test suite complete. Testnet deployment, UI, and demo video follow in the build window (see [Roadmap](#roadmap)).
+- **Status:** contracts + full test suite + testnet deployment + UI complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md)). Demo video and submission package follow in the build window (see [Roadmap](#roadmap)).
 
 ## How it works
 
@@ -55,6 +55,9 @@ test/
   mocks/Mocks.sol         # Plain, non-reverting, and hook tokens + attackers
 script/
   Deploy.s.sol            # Testnet deploy (env-based, no keys in repo)
+ui/                       # Next.js frontend: live dashboard, deposit, grant,
+                          # pay-as-key, revoke, pause/sweep, light/dark themes
+                          # (see ui/README.md; verified in ui/VERIFICATION.md)
 ARCHITECTURE.md           # Architecture, flows, and API examples
 THREAT-MODEL.md           # Security specification and accepted risks
 ```
@@ -138,7 +141,8 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 
 ## Roadmap
 
-- Testnet deployment + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view) + demo agent script holding only a session key.
+- [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
+- Demo agent script holding only a session key.
 - Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes).
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack — a roadmap footnote, not an integration claim).
