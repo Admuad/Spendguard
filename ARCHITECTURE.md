@@ -127,7 +127,7 @@ event OwnerWithdraw(address indexed owner, uint256 amount, uint256 newBalance);
 | `ZeroSpendCap()` / `ZeroMaxPerTx()` / `MaxPerTxExceedsSpendCap()` / `ExpiryInPast()` / `EmptyAllowlist()` / `SessionAlreadyActive()` / `ZeroAddress()` | Invalid grant parameters |
 | `EnforcedPause()` | The vault is paused (OpenZeppelin) |
 | `OwnableUnauthorizedAccount(address)` | Owner-only function (OpenZeppelin) |
-| `SafeERC20FailedOperation(address)` | The token move failed silently (tUSD8 does not revert) |
+| `SafeERC20FailedOperation(address)` | The token move failed (revert surfaced, or a silent `false` from a non-standard token) |
 
 ### Call flow: a payment
 
@@ -159,8 +159,10 @@ emit PaymentExecuted
 - **Defence in depth on reentrancy.** Checks-effects-interactions *and* a
   reentrancy guard on all three fund-moving functions. Either layer alone
   stops the attack; both are required.
-- **SafeERC20 everywhere.** tUSD8 does not revert on transfer failure, so
-  unchecked calls would silently corrupt accounting. Every move checks its
+- **SafeERC20 everywhere.** The deployed tUSD8 reverts on failure
+  (fork-verified), and SafeERC20 is retained as defense-in-depth so a
+  silent `false` from any non-standard token would still revert the
+  operation instead of corrupting accounting. Every move checks its
   return value.
 - **No approvals granted by the vault.** The vault never approves any
   spender, so there is no approval for an attacker to exploit.

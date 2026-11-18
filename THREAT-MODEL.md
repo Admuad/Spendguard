@@ -42,10 +42,11 @@ Every state-changing operation emits an event — the on-chain audit trail.
 1. The owner key is trusted and competently held; owner-key compromise is
    out of scope (R-1). A testnet-only key is used.
 2. Session keys are untrusted and compromisable.
-3. The tUSD8 token behaves as a plain ERC-20 with one documented exception:
-   **it does not revert on transfer/transferFrom failure** (starter-kit docs
-   claim; see verification items). All other plain-ERC-20 assumptions
-   (exact amounts, no hooks, no blacklist, 6 decimals) are verify items.
+3. The tUSD8 token behaves as a plain ERC-20: fork-verified 18 Nov 2026
+   (see §6) — transfers revert on failure, move exact amounts, call no
+   hooks, and carry no blacklist. The starter-kit docs claim that it
+   does not revert; that claim is WRONG for the deployed token. A pause
+   mechanism exists (currently unpaused) under a single owner key.
 4. Aevum testnet behaves as a standard EVM chain (Shanghai EVM).
 5. The owner is the only administrator. No timelock, multisig, or upgrade
    path in this build.
@@ -102,13 +103,17 @@ pause, sweep) and recover what is left.
 
 ### Addendum (18 Nov 2026, from the starter-kit read)
 
-- **A-1.** tUSD8 does not revert on transfer/transferFrom failure (kit docs
-  claim — verify against explorer source during the build). Every ERC-20
-  move MUST check return values (SafeERC20). A silent `false` must never
-  count as a spend or corrupt cap accounting.
-- **A-2.** EIP-3009 authorizations are an OPTIONAL gasless path (domain
-  `tUSD8`, version `2`, per-order nonce, 10-minute windows) with a relayer
-  submitting. The core vault works without any relayer. Not decided.
+- **A-1.** CORRECTED 18 Nov 2026: the kit-docs claim that tUSD8 does not
+  revert is WRONG. Fork-verified: over-balance `transfer` and unapproved
+  `transferFrom` both REVERT with error data. Every ERC-20 move still
+  uses SafeERC20 as defense-in-depth, and the non-reverting-token tests
+  prove the vault stays safe even against a token that returns `false`.
+- **A-2.** DEAD 18 Nov 2026: EIP-3009 is NOT present on the deployed
+  tUSD8. Selector scan of the implementation plus fork probes confirm
+  `receiveWithAuthorization` and `transferWithAuthorization` do not
+  exist on the pinned token, whatever the kit docs say. No gasless path
+  via the token is possible. The core vault works without any relayer.
+  EIP-2612 `permit` IS present (domain separator set, `nonces` live).
 - **A-3.** Fork chain id 440050 ≠ Aevum 44005; signatures are chain-bound.
 - **A-4.** Pin `evm_version = "shanghai"`; prefer legacy tx type in scripts.
 
@@ -161,9 +166,9 @@ test.
 
 | # | Item | Status |
 |---|---|---|
-| V-1 | tUSD8 has no fee-on-transfer | OPEN — read token source on the explorer. Mitigated regardless: deposits use balance-delta accounting. |
-| V-2 | No transfer hooks / callbacks | OPEN — read token source. Mitigated regardless: guard + checks-effects-interactions, proven against a hook token in T-6. |
-| V-3 | No blacklist / pause / per-address restriction on the token | OPEN — read token source. |
+| V-1 | tUSD8 has no fee-on-transfer | CLOSED 18 Nov 2026 — fork-verified: a 1,000,000-unit transfer delivered exactly 1,000,000. Token source is unverified on the explorer (proxy + implementation), so behavior was proven on a local fork instead. Deposits use balance-delta accounting regardless. |
+| V-2 | No transfer hooks / callbacks | CLOSED 18 Nov 2026 — fork-verified: transfer to a contract whose fallback reverts succeeded. No ERC-777-style hooks. Guard + checks-effects-interactions proven against a hook token in T-6 regardless. |
+| V-3 | No blacklist / pause / per-address restriction on the token | CLOSED 18 Nov 2026 with one live caveat — fork-verified: no blacklist selector exists; `paused()` reads `false`. A pause mechanism DOES exist (`pause`/`unpause` selectors, single owner `0x94ef5dB164e7BBf4149e298c5588C035Ea8E9C05`): if the token owner pauses, vault payments freeze until unpaused. Accepted external risk; the vault cannot mitigate a token-level pause. |
 | V-4 | Decimals are 6; address correct for 44005 | CLOSED — corroborated by four official sources (FAQ, token list, MetaMask guide, starter guide). |
 | V-5 | How to obtain tUSD8 | CLOSED — web faucet (1 tUSD8/claim, 24h cooldown) + Discord #faucet (once per person). |
 | V-6 | Starter-kit contents | ANSWERED as far as public sources allow — kit repo is public (qday-io/aevum-starter-kit); no session-key code exists in it. |
@@ -173,6 +178,8 @@ test.
 | V-10 | tQDAY faucet for the testnet wallet | CLOSED — wallet funded. |
 | V-11 | DoraHacks registration requirements | CLOSED — registered 18 Nov 2026. |
 | V-12 | USDT payout mechanics | OPEN — unstated anywhere public. |
+| V-13 | Transfer failure behavior (kit docs: does not revert) | CLOSED 18 Nov 2026 — REFUTED. Fork-verified: over-balance transfer and unapproved transferFrom both REVERT with error data. SafeERC20 retained as defense-in-depth. |
+| V-14 | EIP-3009 present on tUSD8 (kit docs claim) | CLOSED 18 Nov 2026 — ABSENT. Selector scan + fork probes: no `receiveWithAuthorization`/`transferWithAuthorization`. EIP-2612 `permit` present. Gasless path via the token is impossible; A-2 dead. |
 
 ## 7. Document control
 
@@ -180,5 +187,9 @@ test.
 - v2.0 — 2026-11-18 (build-window spec: addendum A-1..A-4 folded in,
   verification statuses updated, grant validation extended with
   zero-address checks, deposit balance-delta accounting recorded).
+- v2.1 — 2026-11-18 (fork-verified tUSD8 behavior: reverts on failure,
+  exact amounts, no hooks, no blacklist, pause exists but inactive,
+  EIP-3009 absent, EIP-2612 present; A-1 corrected, A-2 dead, V-1..V-3
+  closed, V-13/V-14 added).
 - Record future changes here with date and outcome. Do not silently edit
   the invariant list.

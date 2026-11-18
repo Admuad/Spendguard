@@ -39,7 +39,7 @@ Headline guarantees, all proven by the test suite:
 - **Bounded delegation.** The maximum loss from any single compromised session key is that key's remaining cap. No failure turns a bounded loss into a vault drain.
 - **Instant, irreversible revocation.** Once a revoke is mined, the key can never spend again. Re-granting starts a fresh session with `spent == 0`.
 - **Pause freezes spending, never recovery.** The owner sweep works while paused.
-- **Non-reverting token safe.** tUSD8 does not revert on transfer failure, so every token move goes through OpenZeppelin `SafeERC20`: a silent `false` reverts the vault operation and never corrupts cap accounting.
+- **Token-behavior safe.** Fork-verified 18 Nov 2026: tUSD8 reverts on transfer failure, moves exact amounts, and calls no hooks. Every token move still goes through OpenZeppelin `SafeERC20` as defense-in-depth, and the non-reverting-token tests prove a silent `false` would revert the vault operation and never corrupt cap accounting.
 - **Balance-delta deposits.** Deposits credit what actually arrived, so accounting stays correct even if the token ever takes a transfer fee.
 
 Honest limits (see THREAT-MODEL.md §5): the owner key is the root of trust; session state is public on-chain (transparency is the audit trail — no privacy is claimed); mempool front-running of a revoke is bounded by the remaining cap, not preventable.
@@ -89,7 +89,10 @@ Copy `.env.example` to `.env` (gitignored) and fill it in. Deploy scripts read t
 | tUSD8 (6 decimals) | `0x456569838f1d43009A91ebA4263147Afd7233483` |
 | RPC | `https://rpc-test.qday.info` |
 | Explorer | `https://explorer-test.qday.info` |
-| SpendGuard vault | *(deployed during the build window; address + tx hashes recorded here on deploy)* |
+| SpendGuard vault | `0x9a113999851e446a7ab516472e2dae743fc2a0ca` |
+| Deploy tx | `0xbe573e67a296cab6bacb5cfb1cfe91bef681171037db06e4383d7caa666536d3` (18 Nov 2026, deployer `0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898`) |
+
+Live end-to-end proof on the testnet (18 Nov 2026, same deployer wallet): deposit 1,000,000 → grant session (cap 800,000, per-tx 400,000) → execute 300,000 → over-cap 500,000 reverted `PerTxLimitExceeded` → non-allowlist recipient reverted `RecipientNotAllowed` → revoke → post-revoke spend reverted `SessionNotActive` → `ownerWithdraw` swept the vault to 0 and the deployer ended back at exactly 6,000,000 tUSD8. Evidence txs: grant `0xc8827806fd60595f99d3e52b11abd2496bed06c3070a7debb2eb34ced693f1fc`, payment `0xe3634e7f7d467157fd82ccbbae1fafcb97374fbff3a0b56169badca880e3325f`, revoke `0x20a6058d105140758cf88c5befb577fda72d3e15cd76350fe42a8c7620e73769`, withdraw `0x4517d7175503af3de4fe20b2b636657a1d17e76db24eb2af28724ba9c34f37d3`.
 
 ### Deploy (testnet only)
 
@@ -139,7 +142,7 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 - Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes).
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack — a roadmap footnote, not an integration claim).
-- Optional EIP-3009 gasless path: a session key signs an authorization, a relayer submits. The core vault works without any relayer; gasless is an additive option, not a dependency.
+- No EIP-3009 gasless path: the deployed tUSD8 has no `receiveWithAuthorization`/`transferWithAuthorization` (verified 18 Nov 2026), so no gasless flow via the token is possible. The core vault works without any relayer. EIP-2612 `permit` is present on the token if a signed-approval flow is ever wanted.
 
 ## License
 

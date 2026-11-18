@@ -24,9 +24,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// - There is no edit operation. To change a session, revoke it and grant a new
 ///   one; the new session starts with `spent == 0`.
 /// - The vault never grants an ERC-20 approval to any address (INV-13).
-/// - All token movement goes through SafeERC20: tUSD8 does NOT revert on
-///   transfer/transferFrom failure, so return values must be checked (A-1).
-///   A silent `false` reverts the vault operation and never corrupts accounting.
+/// - All token movement goes through SafeERC20 as defense-in-depth (A-1):
+///   the deployed tUSD8 reverts on failure (fork-verified 18 Nov 2026), and
+///   a silent `false` from any non-standard token would still revert the
+///   vault operation and never corrupt accounting.
 /// - Deposits are measured by balance delta, so accounting stays correct even if
 ///   the token ever takes a transfer fee (threat model V-1 fallback).
 contract SpendGuard is Ownable, ReentrancyGuard, Pausable {
