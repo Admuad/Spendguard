@@ -66,7 +66,7 @@ Prerequisites: [Foundry](https://book.getfoundry.sh/) (`forge`, `cast`).
 ```bash
 git clone https://github.com/Admuad/Spendguard.git
 cd Spendguard
-forge install   # fetches OpenZeppelin v5.4.0 + forge-std (see .gitmodules)
+git submodule update --init   # fetches OpenZeppelin v5.4.0 + forge-std (see .gitmodules)
 forge build
 forge test      # 29 unit/adversarial tests + 4 invariant properties
 ```
