@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import type { VaultData } from "@/lib/useVaultData";
 import { CountUp, Chevron, Reveal } from "./bits";
 import { LogoLockup } from "./Logo";
 import { formatTusd8 } from "@/lib/format";
+import { APP_URL, BASE_PATH } from "@/lib/site";
 import {
   DORAHACKS_URL,
   EXPLORER_URL,
@@ -485,7 +487,7 @@ export function SetupGuide() {
                 The vault is live on the Aevum testnet with real test
                 tokens. Deposit, grant, pay, and revoke for real.
               </p>
-              <a href="#app" className="btn btn-primary">
+              <a href={APP_URL} className="btn btn-primary">
                 Open the vault
               </a>
             </div>
@@ -681,12 +683,13 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
 }
 
 export function Footer() {
+  const onAppPage = usePathname().replace(/\/$/, "").endsWith("/app");
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <a href="#top" className="nav-logo footer-logo" aria-label="SpendGuard home">
+            <a href={onAppPage ? `${BASE_PATH}/` : "#top"} className="nav-logo footer-logo" aria-label="SpendGuard home">
               <LogoLockup size={34} />
             </a>
             <p>

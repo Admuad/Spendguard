@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { ThemeToggle } from "@/lib/theme";
+import { APP_URL, BASE_PATH } from "@/lib/site";
 import { LogoLockup } from "./Logo";
 import { aevumTestnet } from "@/lib/config";
 import { plainConnectErrorMessage, plainSwitchErrorMessage, shortenAddress } from "@/lib/format";
 
-const NAV_LINKS = [
-  { href: "#app", label: "Vault" },
-  { href: "#capabilities", label: "Capabilities" },
-  { href: "#start", label: "Setup" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#faq", label: "FAQ" },
+const SECTION_LINKS = [
+  { hash: "#capabilities", label: "Capabilities" },
+  { hash: "#start", label: "Setup" },
+  { hash: "#how-it-works", label: "How it works" },
+  { hash: "#faq", label: "FAQ" },
 ];
 
 /** Small popover under a navbar button: a failed connect or switch must say
@@ -207,6 +208,18 @@ export function ConnectButton({ className = "" }: { className?: string }) {
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isConnected } = useAccount();
+  const pathname = usePathname();
+  const onAppPage = pathname.replace(/\/$/, "").endsWith("/app");
+  // Section anchors live on the landing page; from the app page they
+  // must point home first, or they would match nothing.
+  const navLinks = [
+    { href: APP_URL, label: "Vault" },
+    ...SECTION_LINKS.map((link) => ({
+      href: onAppPage ? `${BASE_PATH}/${link.hash}` : link.hash,
+      label: link.label,
+    })),
+  ];
+  const logoHref = onAppPage ? `${BASE_PATH}/` : "#top";
 
   // Close the mobile menu on resize to desktop widths.
   useEffect(() => {
@@ -239,14 +252,14 @@ export function Navbar() {
   }, [isConnected]);
 
   return (
-    <header className="nav">
+    <header className={`nav${onAppPage ? " nav-on-light" : ""}`}>
       <div className={`container nav-inner${menuOpen ? " nav-inner-menu-open" : ""}`}>
-        <a href="#top" className="nav-logo" aria-label="SpendGuard home">
+        <a href={logoHref} className="nav-logo" aria-label="SpendGuard home">
           <LogoLockup size={34} />
         </a>
         <nav className="nav-links" aria-label="Sections">
-          {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href}>
+          {navLinks.map((link) => (
+            <a key={link.href} href={link.href} aria-current={onAppPage && link.label === "Vault" ? "page" : undefined}>
               {link.label}
             </a>
           ))}
@@ -282,7 +295,7 @@ export function Navbar() {
             onClick={() => setMenuOpen(false)}
           />
           <div className="mobile-menu">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
                 {link.label}
               </a>

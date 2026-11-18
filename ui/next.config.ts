@@ -10,7 +10,7 @@ import type { NextConfig } from "next";
 const isGhPages = process.env.DEPLOY_TARGET === "github-pages";
 
 const nextConfig: NextConfig = isGhPages
-  ? { output: "export", basePath: "/Spendguard" }
+  ? { output: "export", basePath: "/Spendguard", trailingSlash: true }
   : {};
 
 export default nextConfig;

@@ -428,6 +428,48 @@ summary:focus-visible,
   transform: translateX(20px);
 }
 
+/* App page: the navbar sits on the page background, not the dark hero,
+   so its hero-white styling flips to theme text/surface colors. The
+   overrides are theme-variable based, so they hold in light and dark. */
+.nav-on-light {
+  --nav-text: var(--text);
+  --nav-text-dim: var(--text-2);
+}
+
+.nav-on-light .nav-links a:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.nav-on-light .wallet-chip {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.nav-on-light .wallet-chip:hover {
+  background: var(--surface-muted);
+}
+
+.nav-on-light .theme-toggle {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.nav-on-light .theme-toggle:hover {
+  background: var(--surface-muted);
+}
+
+.nav-on-light .theme-toggle-track {
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.nav-on-light .hamburger {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 /* ---------------- Hero ---------------- */
 .hero {
   background: linear-gradient(
@@ -1179,15 +1221,30 @@ summary:focus-visible,
   border-bottom: 1px solid var(--border);
 }
 
-.app-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* Vault panels: two independent columns, so each column packs tightly
+   and a panel growing in one never moves the other. No row coupling, no
+   forced equal heights, no voids inside cards. The sessions slot sits
+   below the columns, full width. */
+.app-columns {
+  display: flex;
   gap: 24px;
-  /* Stretch, not start: panels in a row share one height, so the grid
-     stays put when a panel's content grows or shrinks (connecting,
-     creating a vault, warnings appearing). With start alignment each
-     panel sized to its own content and the rows looked scattered. */
-  align-items: stretch;
+  align-items: flex-start;
+}
+
+.app-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.panel-slot {
+  min-width: 0;
+}
+
+.panel-slot[data-panel="sessions"] {
+  margin-top: 24px;
 }
 
 .panel {
@@ -2017,8 +2074,8 @@ summary:focus-visible,
     grid-template-columns: 1fr;
     padding: 24px;
   }
-  .app-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .app-columns {
+    flex-direction: column;
   }
   .cta-banner h2 {
     font-size: 30px;
@@ -2358,7 +2415,7 @@ summary:focus-visible,
   }
 
   /* One shared connect prompt; per-panel prompts hide. */
-  .app-grid .connect-prompt {
+  .app-panels .connect-prompt {
     display: none;
   }
 
@@ -2419,17 +2476,17 @@ summary:focus-visible,
     color: #fff;
   }
 
-  /* Single panel: only the selected form shows. Panel order in VaultApp
-     is deposit, grant, pay, owner, sessions; keep these in sync. */
-  .app-grid .panel {
+  /* Single panel: only the selected form shows. Slots key off
+     data-panel, so column order never matters. */
+  .app-panels .panel-slot {
     display: none;
   }
 
-  .app-grid[data-mobile-panel="deposit"] > .panel:nth-child(1),
-  .app-grid[data-mobile-panel="grant"] > .panel:nth-child(2),
-  .app-grid[data-mobile-panel="pay"] > .panel:nth-child(3),
-  .app-grid[data-mobile-panel="owner"] > .panel:nth-child(4),
-  .app-grid[data-mobile-panel="sessions"] > .panel:nth-child(5) {
+  .app-panels[data-mobile-panel="deposit"] .panel-slot[data-panel="deposit"],
+  .app-panels[data-mobile-panel="grant"] .panel-slot[data-panel="grant"],
+  .app-panels[data-mobile-panel="pay"] .panel-slot[data-panel="pay"],
+  .app-panels[data-mobile-panel="owner"] .panel-slot[data-panel="owner"],
+  .app-panels[data-mobile-panel="sessions"] .panel-slot[data-panel="sessions"] {
     display: block;
   }
 

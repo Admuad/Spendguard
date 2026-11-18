@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { DemoModal } from "@/components/DemoModal";
-import { VaultApp } from "@/components/VaultApp";
 import {
   About,
   Bento,
@@ -36,7 +35,6 @@ export default function Home() {
         <StatsBand />
         <Bento />
         <SetupGuide />
-        <VaultApp />
         <HowItWorks />
         <Faq />
         <CtaBanner onWatchDemo={() => setDemoOpen(true)} />

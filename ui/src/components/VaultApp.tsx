@@ -2126,22 +2126,39 @@ export function VaultApp() {
           ))}
         </div>
 
-        {/* Panel order is load-bearing for the mobile single-panel CSS:
-            deposit, grant, pay, owner, sessions. Keep it in sync with the
-            data-mobile-panel selectors in globals.css. */}
-        <div className="app-grid" data-mobile-panel={mobilePanel}>
-          <DepositPanel
-            vault={vault}
-            vaultAddress={selected}
-            isOwner={isOwner}
-            tokenBalance={tokenBalance}
-            allowance={allowance}
-            refreshTokenData={refreshTokenData}
-          />
-          <GrantPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
-          <AgentPanel vault={vault} vaultAddress={selected} mySession={mySession} now={now} />
-          <OwnerPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
-          <SessionsPanel vault={vault} vaultAddress={selected} isOwner={isOwner} now={now} />
+        {/* Panels sit in two independent columns, so each column packs
+            tightly with no voids and a panel growing in one column never
+            moves the other. The mobile single-panel view keys off
+            data-panel on each slot, not DOM order. */}
+        <div className="app-panels" data-mobile-panel={mobilePanel}>
+          <div className="app-columns">
+            <div className="app-col">
+              <div className="panel-slot" data-panel="deposit">
+                <DepositPanel
+                  vault={vault}
+                  vaultAddress={selected}
+                  isOwner={isOwner}
+                  tokenBalance={tokenBalance}
+                  allowance={allowance}
+                  refreshTokenData={refreshTokenData}
+                />
+              </div>
+              <div className="panel-slot" data-panel="pay">
+                <AgentPanel vault={vault} vaultAddress={selected} mySession={mySession} now={now} />
+              </div>
+              <div className="panel-slot" data-panel="owner">
+                <OwnerPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
+              </div>
+            </div>
+            <div className="app-col">
+              <div className="panel-slot" data-panel="grant">
+                <GrantPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
+              </div>
+            </div>
+          </div>
+          <div className="panel-slot" data-panel="sessions">
+            <SessionsPanel vault={vault} vaultAddress={selected} isOwner={isOwner} now={now} />
+          </div>
         </div>
       </div>
       <MobileActionBar

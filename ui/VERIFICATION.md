@@ -559,3 +559,41 @@ disconnected rows both 336px. Regression suites all green:
 factory-verify, labels-chips-verify, edit-verify, and the mobile
 Claude-corrections checklist. Screenshots in `verification/`:
 appgrid-after-1440-owner, appgrid-after-1440-disconnected.
+
+## App page split (18 Nov 2026, evening WAT)
+
+Muhammed rejected the stretch fix (empty space inside the short panel
+just to match the tall one) and said he had expected users to manage
+their vault on a separate page, not on the single landing page. So the
+app split in two:
+
+- Landing (`/`): pitch, live demo dashboard, capabilities, setup,
+  how-it-works, FAQ, CTA. No vault panels.
+- App (`/app/`): VaultApp only, navbar + footer chrome, selected
+  vault persisted via the existing localStorage key, so the choice
+  survives the page change.
+
+Layout on the app page: two independent columns, no row coupling, no
+forced heights. Left column Deposit, Pay, Owner; right column Grant
+alone (the tallest form). Connected-owner columns measure 1196px vs
+1158px at 1440px. Sessions sits below, full width. The mobile
+single-panel view keys off `data-panel` on each slot instead of
+nth-child order. The stretch rule is gone.
+
+Static-export notes: without `trailingSlash`, Next exports the route
+as `app.html`, which the local server and Pages resolve
+unreliably, so the Pages build now sets `trailingSlash: true` and the
+route is `/app/` (`out/app/index.html`). Internal links use
+`APP_URL` from `lib/site.ts`. The navbar was hero-white (designed over
+the dark hero); on the app page it takes `nav-on-light`, flipping
+logo, links, wallet chip, theme toggle, and hamburger to theme
+variables. Nav section links are pathname-aware: plain hashes on the
+landing page, home-prefixed hashes from the app page.
+
+Verification scripts that exercise the vault now point at
+`/Spendguard/app/`: factory-verify, labels-chips-verify, edit-verify,
+mobile-claude-check, plus the ad-hoc grant-debug, probe360/b,
+usage-filled-screenshot, and modal-settled. dash-shots and the hero /
+setup scripts stay on the landing page. Screenshots in
+`verification/`: split-app-1440-owner-top/panels, split-app-1440-dark-top,
+split-app-390-disconnected/menu, split-landing-1440-top.

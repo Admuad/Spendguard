@@ -12,3 +12,9 @@ export const SITE_URL =
  * the Pages build (see next.config.ts and ui/README.md).
  */
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+/**
+ * The dedicated vault-management page. The landing page pitches and
+ * proves (live demo dashboard); managing a vault lives here.
+ */
+export const APP_URL = `${BASE_PATH}/app/`;

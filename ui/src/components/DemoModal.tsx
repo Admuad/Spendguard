@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { DEMO_VIDEO_URL } from "@/lib/config";
+import { APP_URL } from "@/lib/site";
 
 export function DemoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   useEffect(() => {
@@ -53,13 +54,13 @@ export function DemoModal({ open, onClose }: { open: boolean; onClose: () => voi
             <div className="modal-placeholder">
               <strong>Demo video coming soon</strong>
               <span>
-                The vault is live on Aevum testnet now. Connect a wallet
-                below and try the real flow. Grant a session, pay within
-                the cap, and watch the caps hold.
+                The vault is live on Aevum testnet now. Open the app page,
+                connect a wallet, and try the real flow. Grant a session,
+                pay within the cap, and watch the caps hold.
               </span>
             </div>
             <p style={{ marginTop: 16 }}>
-              <a href="#app" onClick={onClose}>
+              <a href={APP_URL} onClick={onClose}>
                 Try the live vault →
               </a>
             </p>
