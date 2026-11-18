@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { VaultData } from "@/lib/useVaultData";
 import { CountUp, Chevron, Reveal } from "./bits";
+import { LogoLockup } from "./Logo";
 import { formatTusd8 } from "@/lib/format";
 import {
   DORAHACKS_URL,
@@ -550,8 +551,7 @@ export function Footer() {
         <div className="footer-grid">
           <div className="footer-brand">
             <a href="#top" className="nav-logo footer-logo" aria-label="SpendGuard home">
-              <span className="nav-logo-mark">S</span>
-              SpendGuard
+              <LogoLockup size={34} />
             </a>
             <p>
               A scoped session-key vault for tUSD8 on the QDay Aevum testnet.

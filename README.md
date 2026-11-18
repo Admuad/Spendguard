@@ -8,6 +8,8 @@ Spending authority becomes a grantable, revocable, auditable object — not a sh
 
 - **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
 - **Status:** contracts + full test suite + testnet deployment + UI complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md)). Demo video and submission package follow in the build window (see [Roadmap](#roadmap)).
+- **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`).
+- **Brand:** logo, colors, typography, and usage rules in [BRANDING.md](BRANDING.md).
 
 ## How it works
 
@@ -60,6 +62,7 @@ ui/                       # Next.js frontend: live dashboard, deposit, grant,
                           # (see ui/README.md; verified in ui/VERIFICATION.md)
 ARCHITECTURE.md           # Architecture, flows, and API examples
 THREAT-MODEL.md           # Security specification and accepted risks
+BRANDING.md               # Logo, colors, typography, and usage rules
 ```
 
 ## Setup and reproduction

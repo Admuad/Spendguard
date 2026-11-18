@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { ThemeToggle } from "@/lib/theme";
+import { LogoLockup } from "./Logo";
 import { aevumTestnet } from "@/lib/config";
 import { shortenAddress } from "@/lib/format";
 
@@ -140,8 +141,7 @@ export function Navbar() {
     <header className="nav">
       <div className="container nav-inner">
         <a href="#top" className="nav-logo" aria-label="SpendGuard home">
-          <span className="nav-logo-mark">S</span>
-          SpendGuard
+          <LogoLockup size={34} />
         </a>
         <nav className="nav-links" aria-label="Sections">
           {NAV_LINKS.map((link) => (

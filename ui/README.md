@@ -43,11 +43,15 @@ npm run build && npm run start   # production build
 ## Stack
 
 Next.js 16 + React 19 + wagmi/viem, plain CSS custom properties (no CSS
-framework), Inter. Wallet connect is injected wallets only (MetaMask, Rabby,
-…): WalletConnect is deliberately excluded because it needs a project-id
-secret, and this app has zero secrets by design. Transactions are submitted
-as legacy type: the vault itself was deployed legacy, and the starter-kit
-docs warn some tooling mishandles EIP-1559 fields on this chain.
+framework), Inter Tight self-hosted (see Design). Wallet connect is injected
+wallets only (MetaMask, Rabby, …): WalletConnect is deliberately excluded
+because it needs a project-id secret, and this app has zero secrets by
+design. The wallet connection persists in localStorage and reconnects
+automatically after a tab close/reopen with no wallet prompt; the wagmi
+config deliberately avoids `ssr` mode, which would skip that restore (see
+`src/lib/wagmi.ts` and VERIFICATION.md). Transactions are submitted as
+legacy type: the vault itself was deployed legacy, and the starter-kit docs
+warn some tooling mishandles EIP-1559 fields on this chain.
 
 ## Design
 
@@ -58,6 +62,30 @@ assets, images, or copy text are used. Sections are tailored to the vault:
 capabilities, three roles (owner / agent / auditor), guarantees tied to the
 threat-model invariants, how-it-works, FAQ with real answers, and the live
 app. No fake testimonials, no fake pricing, no invented partners.
+
+The typeface is Inter Tight (self-hosted variable font, SIL OFL 1.1, in
+`src/app/fonts/`). Vellure's own typeface is Neue Montreal, a commercial
+font; Inter Tight was picked by rendering four free candidates side by side
+against the Vellure hero and choosing the closest match, with the same
+500-weight / −0.02em heading treatment. The app loads no font from any
+outside service. Full brand rules (logo, colors, type scale, voice,
+do/don'ts) live in [`../BRANDING.md`](../BRANDING.md).
+
+## Deploy (GitHub Pages)
+
+The live site is a static export served from the `gh-pages` branch:
+
+```bash
+cd ui
+DEPLOY_TARGET=github-pages NEXT_PUBLIC_BASE_PATH=/Spendguard npm run build
+# then push the out/ tree to the gh-pages branch (build output only)
+```
+
+`DEPLOY_TARGET=github-pages` switches `next.config.ts` to `output: "export"`
+with `basePath: "/Spendguard"`; `NEXT_PUBLIC_BASE_PATH` keeps metadata
+icon/manifest links on the same prefix. Local dev and `next start` are
+unaffected. Link previews, favicons, manifest, robots, and sitemap are all
+in `public/` and verified live (see VERIFICATION.md).
 
 ## Layout
 

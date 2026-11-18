@@ -1,27 +1,97 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import localFont from "next/font/local";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { BASE_PATH, SITE_URL } from "@/lib/site";
 import { Providers } from "./providers";
 import "./globals.css";
 
+/**
+ * Inter Tight, self-hosted (SIL OFL 1.1, see ./fonts/OFL.txt). Vellure's
+ * typeface is Neue Montreal, a commercial font; Inter Tight is the closest
+ * free match (verified side-by-side, same 500-weight/-0.02em heading
+ * treatment). The variable font covers weights 100-900 in one 45KB file,
+ * and self-hosting keeps the app free of external font dependencies.
+ */
+const interTight = localFont({
+  src: "./fonts/inter-tight-latin.woff2",
+  variable: "--font-inter-tight",
+  weight: "100 900",
+  display: "swap",
+});
+
+const TITLE = "SpendGuard — Scoped session-key vault for tUSD8 on Aevum";
+const DESCRIPTION =
+  "Give an agent a key that can only spend a little, only to approved merchants, only until Friday — and take it back in one click. A scoped session-key vault for tUSD8 on the QDay Aevum testnet.";
+
 export const metadata: Metadata = {
-  title: "SpendGuard — Scoped session-key vault for tUSD8 on Aevum",
-  description:
-    "Give an agent a key that can only spend a little, only to approved merchants, only until Friday — and take it back in one click. A scoped session-key vault for tUSD8 on the QDay Aevum testnet.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: [
+    "session keys",
+    "scoped keys",
+    "tUSD8",
+    "Aevum",
+    "QDay",
+    "smart contract vault",
+    "AI agents",
+    "spending caps",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "SpendGuard",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    locale: "en_US",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpendGuard — give an agent a key that can only spend a little.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [`${SITE_URL}/og-image.png`],
+  },
+  icons: {
+    icon: [
+      { url: `${BASE_PATH}/favicon.svg`, type: "image/svg+xml" },
+      { url: `${BASE_PATH}/favicon-32.png`, sizes: "32x32", type: "image/png" },
+    ],
+    apple: `${BASE_PATH}/apple-touch-icon.png`,
+  },
+  appleWebApp: {
+    capable: true,
+    title: "SpendGuard",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#00081d" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={interTight.variable}>
       <head>
         {/* Resolve the theme before first paint: no flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
+        <link rel="manifest" href={`${BASE_PATH}/manifest.webmanifest`} />
       </head>
       <body>
         <Providers>{children}</Providers>

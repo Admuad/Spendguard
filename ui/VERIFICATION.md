@@ -39,6 +39,39 @@ build` + `npm run start`), not the dev server.
   files; the app builds and runs with zero environment variables.
   `.gitignore` covers `node_modules/`, `.next/`, `out/`, `.verification/`,
   `.env*`.
+- **Wallet session persistence.** The wagmi config deliberately does NOT use
+  `ssr` mode (see the comment in `src/lib/wagmi.ts`): with `ssr: true`,
+  wagmi skips store hydration and only restores the connection from a
+  server-provided cookie state, which a static build can never provide —
+  the classic flaw where reopening the tab shows disconnected even though
+  the wallet still has the site connected. Verified 18 Nov 2026 with a mock
+  injected provider (MetaMask-shaped, chain 44005): fresh connect works;
+  reload auto-reconnects with no wallet prompt (only `eth_accounts` /
+  `eth_chainId` calls); a new tab in the same browser comes back connected;
+  an explicit disconnect stays disconnected across reload; a wallet-side
+  revoke (`accountsChanged: []`) disconnects the UI.
+- **Brand, font, and link previews (18 Nov 2026).** Vellure's typeface was
+  identified by live computed-style inspection as Neue Montreal (Medium 500
+  headings at 72px / −0.02em, Regular 400 body), a commercial font; Inter
+  Tight was chosen as the closest free match after rendering four candidates
+  side by side against the Vellure hero, and is self-hosted via
+  `next/font/local` (no outside font service; zero `fonts.googleapis.com`
+  references in the export). The logo (shield + session key whose teeth are
+  the three bounds) was designed as SVG, rendered and inspected at 16–128px
+  on light and dark, with a simplified variant for favicons; see
+  `BRANDING.md`. Full metadata verified in the built HTML: Open Graph
+  (absolute image URL, 1200×630 + alt), X `summary_large_image`, favicon SVG
+  + 32px PNG, Apple touch icon, manifest (relative paths, base-path safe),
+  canonical URL, `theme-color` for both schemes, Apple web-app metas,
+  `robots.txt`, `sitemap.xml`.
+- **GitHub Pages deployment (18 Nov 2026).** Static export
+  (`DEPLOY_TARGET=github-pages`, `basePath: "/Spendguard"`) pushed to the
+  `gh-pages` branch (build output only; source of truth is `main`).
+  Verified live at https://admuad.github.io/Spendguard/ in a headless
+  browser: zero failed requests, zero page errors, font loaded, logo
+  rendered, live balance and session reads working, zero horizontal
+  overflow at 1440px and 390px. `og-image.png`, `favicon.svg`,
+  `manifest.webmanifest`, `robots.txt`, and `sitemap.xml` all return 200.
 
 ## Bugs found and fixed during verification
 
