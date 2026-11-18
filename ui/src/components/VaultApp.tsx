@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useAccount, useConnect, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { injected } from "wagmi/connectors";
 import type { Address } from "viem";
@@ -159,7 +160,7 @@ function TxStatus({
 function ConnectPrompt({ action }: { action: string }) {
   const { connect, isPending, error, reset } = useConnect();
   return (
-    <div className="empty-state">
+    <div className="empty-state connect-prompt">
       <p style={{ margin: "0 0 14px" }}>
         Connect a browser wallet (MetaMask, Rabby, or any injected wallet) to {action}. The vault
         data above is live and readable without a wallet.
@@ -1138,12 +1139,171 @@ function OwnerPanel({ vault, isOwner }: { vault: VaultData; isOwner: boolean }) 
 }
 
 // ---------------------------------------------------------------------------
+// Mobile-only chrome: one shared connect prompt, a segmented panel switch,
+// and a persistent bottom action bar. Desktop renders none of this (CSS),
+// and every control below drives the same single wagmi connection and the
+// same panel components as the desktop grid.
+// ---------------------------------------------------------------------------
+type MobilePanel = "deposit" | "grant" | "pay" | "owner" | "sessions";
+
+const MOBILE_PANELS: Array<{ id: MobilePanel; label: string }> = [
+  { id: "deposit", label: "Deposit" },
+  { id: "grant", label: "Grant" },
+  { id: "pay", label: "Pay" },
+  { id: "owner", label: "Owner" },
+  { id: "sessions", label: "Sessions" },
+];
+
+/** One connect prompt for the whole vault section on mobile, replacing the
+ * per-panel prompts (hidden by CSS below 860px). */
+function MobileConnectPrompt() {
+  const { connect, isPending, error, reset } = useConnect();
+  return (
+    <div className="mobile-shared-prompt">
+      <p>
+        Connect a browser wallet to use the vault. One connection unlocks
+        every panel, and the vault data above stays readable without one.
+      </p>
+      <button
+        type="button"
+        className="btn btn-primary btn-block"
+        disabled={isPending}
+        onClick={() => {
+          reset();
+          connect({ connector: injected() });
+        }}
+      >
+        {isPending ? "Connecting…" : "Connect wallet"}
+      </button>
+      {error && (
+        <p className="error-text" role="alert">
+          {plainConnectErrorMessage(error)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MobileActionBar({
+  active,
+  onNavigate,
+}: {
+  active: MobilePanel;
+  onNavigate: (panel: MobilePanel) => void;
+}) {
+  const { isConnected, chainId } = useAccount();
+  const { connect, isPending, error: connectError, reset: resetConnect } = useConnect();
+  const {
+    switchChain,
+    isPending: isSwitching,
+    error: switchError,
+    reset: resetSwitch,
+  } = useSwitchChain();
+  const wrongChain = isConnected && chainId !== aevumTestnet.id;
+
+  if (!isConnected) {
+    return (
+      <div className="mobile-action-bar">
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          disabled={isPending}
+          onClick={() => {
+            resetConnect();
+            connect({ connector: injected() });
+          }}
+        >
+          {isPending ? "Connecting…" : "Connect wallet"}
+        </button>
+        {connectError && (
+          <p className="error-text" role="alert">
+            {plainConnectErrorMessage(connectError)}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (wrongChain) {
+    return (
+      <div className="mobile-action-bar">
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          disabled={isSwitching}
+          onClick={() => {
+            resetSwitch();
+            switchChain({ chainId: aevumTestnet.id });
+          }}
+        >
+          {isSwitching ? "Switching…" : "Switch to Aevum"}
+        </button>
+        {switchError && (
+          <p className="error-text" role="alert">
+            {plainSwitchErrorMessage(switchError)}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  const tabs: Array<{ id: MobilePanel; label: string; icon: ReactNode }> = [
+    {
+      id: "deposit",
+      label: "Vault",
+      icon: (
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z" />
+        </svg>
+      ),
+    },
+    {
+      id: "grant",
+      label: "Grant",
+      icon: (
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="8" cy="15" r="4" />
+          <path d="m10.9 12.1 8.6-8.6M18 5l2 2M15 8l2 2" />
+        </svg>
+      ),
+    },
+    {
+      id: "pay",
+      label: "Pay",
+      icon: (
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M8 7h9v9" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <nav className="mobile-action-bar mobile-action-bar-tabs" aria-label="Vault shortcuts">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          className="mobile-action-tab"
+          aria-pressed={active === tab.id}
+          onClick={() => onNavigate(tab.id)}
+        >
+          {tab.icon}
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // The vault app section: network banner + all panels.
 // ---------------------------------------------------------------------------
 export function VaultApp({ vault }: { vault: VaultData }) {
   const { address, isConnected, chainId } = useAccount();
   const { switchChain, isPending: isSwitching, error: switchError, reset: resetSwitch } = useSwitchChain();
   const [now, setNow] = useState(() => Date.now());
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("deposit");
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
@@ -1196,7 +1356,26 @@ export function VaultApp({ vault }: { vault: VaultData }) {
           </div>
         )}
 
-        <div className="app-grid">
+        {!isConnected && <MobileConnectPrompt />}
+
+        <div className="vault-segments" role="group" aria-label="Vault panels">
+          {MOBILE_PANELS.map((panel) => (
+            <button
+              key={panel.id}
+              type="button"
+              className="vault-segment"
+              aria-pressed={mobilePanel === panel.id}
+              onClick={() => setMobilePanel(panel.id)}
+            >
+              {panel.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Panel order is load-bearing for the mobile single-panel CSS:
+            deposit, grant, pay, owner, sessions. Keep it in sync with the
+            data-mobile-panel selectors in globals.css. */}
+        <div className="app-grid" data-mobile-panel={mobilePanel}>
           <DepositPanel
             vault={vault}
             tokenBalance={tokenBalance}
@@ -1209,6 +1388,13 @@ export function VaultApp({ vault }: { vault: VaultData }) {
           <SessionsPanel vault={vault} isOwner={isOwner} now={now} />
         </div>
       </div>
+      <MobileActionBar
+        active={mobilePanel}
+        onNavigate={(panel) => {
+          setMobilePanel(panel);
+          document.querySelector("#app")?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
     </section>
   );
 }

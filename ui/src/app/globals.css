@@ -1732,7 +1732,7 @@ summary:focus-visible,
     display: none;
   }
   .nav-cta {
-    height: 40px;
+    height: 44px;
     padding: 0 16px;
     font-size: 14px;
   }
@@ -1752,7 +1752,7 @@ summary:focus-visible,
     left: 16px;
     right: 16px;
     z-index: 60;
-    background: var(--mobile-menu-bg);
+    background: #020a1f;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 20px;
     padding: 12px;
@@ -1914,17 +1914,17 @@ summary:focus-visible,
     gap: 8px;
   }
   .theme-toggle {
-    height: 40px;
+    height: 44px;
     padding: 0 8px;
   }
   .wallet-chip {
-    height: 40px;
+    height: 44px;
     padding: 0 12px;
     font-size: 13px;
   }
   .hamburger {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   .mobile-menu {
     top: 64px;
@@ -1932,7 +1932,7 @@ summary:focus-visible,
 
   /* Sections breathe less; headings step down one size. */
   .section {
-    padding: 56px 0;
+    padding: 48px 0;
   }
   .section-tight {
     padding: 48px 0;
@@ -1947,7 +1947,7 @@ summary:focus-visible,
     font-size: 16px;
   }
   .hero {
-    padding-top: 116px;
+    padding-top: 104px;
   }
   .hero-sub {
     font-size: 16px;
@@ -2144,7 +2144,7 @@ summary:focus-visible,
 
 @media (max-width: 360px) {
   .hero h1 {
-    font-size: 32px;
+    font-size: 34px;
   }
   .section-title {
     font-size: 28px;
@@ -2154,5 +2154,268 @@ summary:focus-visible,
   }
   .hero-cta-row {
     gap: 10px;
+  }
+}
+
+/* ---------------- Mobile redesign: bottom bar, single panel, carousel ---------------- */
+/* Desktop never sees these components: they are display:none until the
+   860px breakpoint. The vault keeps one set of forms and one wagmi
+   connection; only the presentation changes. */
+
+/* Short hero subtitle variant, mobile only. */
+.hero-sub-short {
+  display: none;
+}
+
+/* Menu backdrop: dims the page and closes the menu on an outside tap.
+   The top bar stays bright above it while the menu is open. */
+.mobile-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  background: rgba(0, 8, 24, 0.5);
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.nav-inner-menu-open {
+  position: relative;
+  z-index: 59;
+}
+
+/* Mobile-only vault chrome: hidden on desktop. */
+.vault-segments,
+.mobile-shared-prompt,
+.mobile-action-bar {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  /* Room for the fixed bottom bar, safe-area aware. */
+  body {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  /* One shared connect prompt; per-panel prompts hide. */
+  .app-grid .connect-prompt {
+    display: none;
+  }
+
+  .mobile-shared-prompt {
+    display: block;
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: 18px;
+    padding: 18px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .mobile-shared-prompt p {
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 0 0 14px;
+  }
+
+  .mobile-shared-prompt p.error-text {
+    color: var(--danger);
+    margin: 10px 0 0;
+    text-align: left;
+  }
+
+  /* Segmented panel switch, sticky at the top of the viewport. */
+  .vault-segments {
+    display: flex;
+    gap: 4px;
+    position: sticky;
+    top: max(12px, env(safe-area-inset-top));
+    z-index: 40;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .vault-segment {
+    flex: 1 1 0;
+    min-height: 44px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  .vault-segment[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Single panel: only the selected form shows. Panel order in VaultApp
+     is deposit, grant, pay, owner, sessions; keep these in sync. */
+  .app-grid .panel {
+    display: none;
+  }
+
+  .app-grid[data-mobile-panel="deposit"] > .panel:nth-child(1),
+  .app-grid[data-mobile-panel="grant"] > .panel:nth-child(2),
+  .app-grid[data-mobile-panel="pay"] > .panel:nth-child(3),
+  .app-grid[data-mobile-panel="owner"] > .panel:nth-child(4),
+  .app-grid[data-mobile-panel="sessions"] > .panel:nth-child(5) {
+    display: block;
+  }
+
+  /* Persistent bottom action bar. */
+  .mobile-action-bar {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px max(16px, env(safe-area-inset-left))
+      calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+    box-shadow: 0 -8px 30px rgba(3, 20, 80, 0.1);
+  }
+
+  .mobile-action-bar .error-text {
+    margin: 8px 2px 0;
+  }
+
+  .mobile-action-bar-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .mobile-action-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 48px;
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+
+  .mobile-action-tab[aria-pressed="true"] {
+    color: var(--accent);
+  }
+
+  /* Capabilities become a horizontal scroll-snap carousel with a peek. */
+  .cap-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    gap: 16px;
+    margin: 0 -16px;
+    padding: 4px 16px 12px;
+    scrollbar-width: none;
+  }
+
+  .cap-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cap-grid > * {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+    display: flex;
+  }
+
+  .cap-grid .cap-card {
+    flex: 1;
+  }
+
+  /* Sessions: the Revoke button is full-width and destructive. */
+  .session-actions > .btn-outline {
+    width: 100%;
+    min-height: 44px;
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .session-actions .btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Short subtitle, 34-36px headline, side-by-side CTAs. */
+  .hero-sub-long {
+    display: none;
+  }
+
+  .hero-sub-short {
+    display: block;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+  }
+
+  .hero-cta-row {
+    flex-wrap: nowrap;
+  }
+
+  .hero-cta-row .btn {
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    padding: 0 12px;
+    font-size: 15px;
+  }
+
+  /* 44px minimum tap targets. */
+  .btn-sm {
+    min-height: 44px;
+  }
+
+  .modal-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .recipient-chip {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+  }
+
+  .footer-links a {
+    display: inline-block;
+    padding: 6px 0;
+  }
+
+  .inline-confirm .btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 379px) {
+  /* Narrowest phones: CTAs stack again at equal width. */
+  .hero-cta-row {
+    flex-wrap: wrap;
+  }
+
+  .hero-cta-row .btn {
+    flex: 1 1 100%;
   }
 }

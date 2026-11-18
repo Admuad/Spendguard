@@ -239,7 +239,7 @@ export function Navbar() {
 
   return (
     <header className="nav">
-      <div className="container nav-inner">
+      <div className={`container nav-inner${menuOpen ? " nav-inner-menu-open" : ""}`}>
         <a href="#top" className="nav-logo" aria-label="SpendGuard home">
           <LogoLockup size={34} />
         </a>
@@ -273,14 +273,22 @@ export function Navbar() {
         </div>
       </div>
       {menuOpen && (
-        <div className="mobile-menu">
-          {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
-              {link.label}
-            </a>
-          ))}
-          {!isConnected && <MobileConnect />}
-        </div>
+        <>
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="mobile-menu-backdrop"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="mobile-menu">
+            {NAV_LINKS.map((link) => (
+              <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
+                {link.label}
+              </a>
+            ))}
+            {!isConnected && <MobileConnect />}
+          </div>
+        </>
       )}
     </header>
   );

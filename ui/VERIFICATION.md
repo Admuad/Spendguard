@@ -218,3 +218,43 @@ Panels use full-width actions and 16px inputs. The demo modal becomes a
 bottom sheet. Safe-area insets are respected. Verified at 360, 390, and
 412px: zero document overflow, zero overflowing elements, zero page
 errors, modal docked to the bottom edge, inputs computing to 16px.
+
+## Mobile redesign round — 18 Nov 2026 (from Claude's review + prompt)
+
+Claude's review independently confirmed the theme diagnosis (gradients
+cannot fade, transform fought the reveals) and proposed a View Transitions
+ripple. The ripple was not adopted: the atomic instant switch already
+solves the unevenness with no animation to drop frames on a phone, and
+the patch was written against the pre-round code and does not apply.
+Adopted from the patch: solid mobile-menu panel, 44px hamburger and
+theme toggle. The menu also gained a real backdrop that dims the page
+and closes the menu on an outside tap.
+
+The structural mobile redesign follows the prompt Claude wrote for
+Muse, with Owner kept as a fifth panel (the prompt listed four and
+would have dropped pause/sweep on mobile):
+
+- Persistent bottom action bar (mobile only, safe-area aware): Connect
+  when disconnected, Switch to Aevum on the wrong chain, Vault/Grant/Pay
+  tabs when connected. Tabs switch the panel and scroll to the vault.
+- One vault panel at a time behind a sticky segmented control (Deposit,
+  Grant, Pay, Owner, Sessions). One shared connect prompt above the
+  panel; per-panel prompts are hidden on mobile. Same forms, same
+  validation, same single wagmi connection. Desktop is unchanged.
+- Sessions keep their cards and progress bars; the Revoke button is
+  full-width and destructive on mobile, inline-confirm unchanged.
+- Hero: short subtitle variant on mobile (keeps the on-chain claim),
+  36px headline, side-by-side CTAs at 390px and up, stacked below 380px.
+- Capabilities is a horizontal scroll-snap carousel with a peek of the
+  next card. FAQ stays an accordion. Section padding capped at 48px.
+- 44px minimum tap targets (buttons, chips, modal close, segments, bar
+  tabs), touch-action manipulation, no page-level horizontal scroll.
+
+Verified at 360, 390, and 430px in light and dark, disconnected and
+connected (mock wallet): exactly one panel visible, segment and bottom
+tab switching both work, zero per-panel prompts, carousel scrolls with
+a peek, menu backdrop closes on an outside tap, zero horizontal
+overflow, zero page errors. Page height fell from ~13,400px to
+~10,900px (360px), ~10,300px (390px), ~9,800px (430px). Desktop 1440px
+regression: segments and bar hidden, all five panels visible, long
+subtitle shown, zero overflow. `npm run typecheck` passes.
