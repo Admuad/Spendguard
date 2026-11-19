@@ -864,3 +864,52 @@ route; both cleared on a clean rebuild, typecheck passes.
 Screenshots in `verification/`: round7-nav-{full,compact,icon,
 icon-text}-{dark,light}, round7-390-menu-{dark,light},
 round7b-390-navbar-{dark,light}.
+
+## Feedback round 8: solid mobile menu + our own 404 (19 Nov 2026)
+
+1. **Dark-mode menu was see-through.** The mobile menu panel used
+   `var(--surface)`, which is 5% white in the round-2 dark theme, so
+   the hero bled straight through it. Fix: the panel now uses the
+   dedicated `--mobile-menu-bg` (effectively solid both themes,
+   rgba(10,10,10,0.97) dark / rgba(0,12,40,0.96) light). That
+   variable had been defined since the Claude corrections but never
+   wired up. The dimming backdrop behind the menu was already fine.
+2. **Custom 404, our own, not GitHub's.** Muhammed was clear the
+   GitHub 404 he mentioned was only an example; every site does its
+   own. Ours (`app/not-found.tsx`, exported as `404.html`, which
+   GitHub Pages serves for unknown paths): the vault door is the 0 in
+   a giant 404, a key floats beside it on a slow bob, a dashed dial
+   ring turns around the door, sparkles twinkle, and tapping the door
+   makes the key shake itself loose with a "Nope, wrong key." bubble.
+   Copy: "This key opens nothing." with Take me home / Open the app
+   buttons. No wallet, no chain reads. Reduced-motion disables the
+   float, spin, twinkle and shake.
+
+Verify suite `~/workspace/tools/pw-verify/round8-verify.mjs`: 21/21
+PASS (menu alpha 0.97 dark / 0.96 light, 404.html in the export with
+the headline, 4-door-4, floating key, correct home/app links, no
+overflow, door tap shows "Nope", no errors).
+
+Screenshots in `verification/`: round8-390-menu-{dark,light},
+round8-390-404-{dark,light}, round8-1440-404-dark.
+
+## Feedback round 9: one uniform modal tone (19 Nov 2026)
+
+Muhammed, on the Deposit modal in dark mode: the sheet's edge was
+darker while the text area (and the close button) sat lighter, two
+different blacks in one modal. Cause: the sheet was #161616 while the
+close circle and the dashed connect box sat on translucent
+--surface-2, which renders lighter on top of it. Fix: the dark sheet
+is now a lighter black (#242424) and the close button and dashed box
+inside any modal share the sheet's exact colour, so the whole modal
+is one uniform tone; the dashed border still defines the box and the
+ring still defines the close button. Scoped to `.modal` so empty
+states on the dashboard and activity pages keep their subtle panel.
+Light mode is unchanged (white sheet, white inner pieces).
+
+Verify suite `~/workspace/tools/pw-verify/round9-verify.mjs`: 10/10
+PASS (sheet, close and dashed box all exactly rgb(36,36,36) dark and
+rgb(255,255,255) light; menu still solid both themes; no errors).
+Round 8 re-run alongside: 21/21 PASS.
+
+Screenshots in `verification/`: round9-390-deposit-modal-{dark,light}.
