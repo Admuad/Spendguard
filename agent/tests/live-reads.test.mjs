@@ -14,8 +14,11 @@ import {
 // through the same pre-flight decision function the agent uses.
 //
 // Known sessions on the current demo vault (18 Nov 2026, editSession build):
-//   live demo key: 0x8b473F82D8371345F9572b956Def5602D8fD36d1, cap 1.00,
-//     per-tx 0.50, recipient = testnet wallet, expires ~19 Nov 13:58 WAT.
+//   demo key: 0x8b473F82D8371345F9572b956Def5602D8fD36d1, cap 1.00,
+//     per-tx 0.50, recipient = testnet wallet. EXPIRED ~19 Nov 13:58 WAT.
+//     The two live-session tests below fail until the owner grants a fresh
+//     session to this key (or a new agent key); that is the tests working
+//     as designed, not a code bug.
 //   revoked key: 0x028BF06e4eBF397D8763B62abb3Ef611570B20e2, a throwaway
 //     granted and revoked the same day; its remaining cap reads 0.50 but
 //     it is dead. The key was never saved and nobody controls it.

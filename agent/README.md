@@ -40,6 +40,11 @@ fresh grant after a revoke starts with zero spent.
 The agent key also needs a little tQDAY for gas. It holds no tUSD8 and
 never needs any: payments come out of the vault, not out of the key.
 
+Each user creates their own vault through the SpendGuard factory
+(`0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE` on the Aevum testnet). Point
+the agent at your vault with `VAULT_ADDRESS`. The default is the demo
+vault above.
+
 ## Dry run (no transaction, always safe)
 
 ```sh
