@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { useAccount, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useWalletConnect } from "@/lib/walletConnect";
 import type { Address } from "viem";
-import { ArrowUpRight, KeyRound, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, CircleCheck, KeyRound, ShieldCheck } from "lucide-react";
 import {
   DEPLOY_BLOCK,
   FACTORY_ADDRESS,
@@ -198,6 +198,49 @@ export function ConnectPrompt({ action }: { action: string }) {
 // ---------------------------------------------------------------------------
 // Deposit: exact-amount approve, then deposit. No unlimited approvals.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Deposit success: replaces the form once the deposit confirms, so the user
+// sees the result instead of the same form. The new balance is exact:
+// deposit adds exactly the submitted amount (no fee on the token), so it is
+// the pre-deposit balance plus the amount, never a value that is still
+// waiting on a chain refresh. `newBalance` is null only when the
+// pre-deposit balance was not loaded, in which case the line is omitted.
+// ---------------------------------------------------------------------------
+export function DepositSuccess({
+  amount,
+  newBalance,
+  hash,
+  onDone,
+}: {
+  amount: string;
+  newBalance: string | null;
+  hash: `0x${string}` | undefined;
+  onDone: () => void;
+}) {
+  return (
+    <div className="deposit-success">
+      <span className="deposit-success-icon" aria-hidden="true">
+        <CircleCheck size={44} />
+      </span>
+      <h3>Deposit successful</h3>
+      <p className="panel-desc">
+        {amount} tUSD8 added to your vault.
+        {newBalance !== null && <> Vault balance now {newBalance} tUSD8.</>}
+      </p>
+      {hash && (
+        <p className="panel-desc">
+          <a href={explorerTxUrl(hash)} target="_blank" rel="noreferrer">
+            View on the explorer ↗
+          </a>
+        </p>
+      )}
+      <button type="button" className="btn btn-primary btn-block" onClick={onDone}>
+        Done
+      </button>
+    </div>
+  );
+}
+
 export function DepositPanel({
   vault,
   vaultAddress,
@@ -205,6 +248,7 @@ export function DepositPanel({
   tokenBalance,
   allowance,
   refreshTokenData,
+  onDone,
 }: {
   vault: VaultData;
   vaultAddress: Address;
@@ -212,9 +256,13 @@ export function DepositPanel({
   tokenBalance: bigint | null;
   allowance: bigint | null;
   refreshTokenData: () => void;
+  /** Modal case: closes the modal. Inline case (no onDone): Done resets the
+   * form so the user can top up again. */
+  onDone?: () => void;
 }) {
   const { address, isConnected } = useAccount();
   const [amount, setAmount] = useState("1");
+  const [balanceBefore, setBalanceBefore] = useState<bigint | null>(null);
   const approveFlow = useWriteFlow(refreshTokenData);
   const depositFlow = useWriteFlow(() => {
     vault.refresh();
@@ -276,6 +324,30 @@ export function DepositPanel({
             </>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (depositFlow.phase === "success") {
+    return (
+      <div className="panel">
+        <DepositSuccess
+          amount={parsed ? formatTusd8(parsed) : "…"}
+          newBalance={
+            balanceBefore !== null && parsed !== null
+              ? formatTusd8(balanceBefore + parsed)
+              : null
+          }
+          hash={depositFlow.hash}
+          onDone={
+            onDone ??
+            (() => {
+              approveFlow.reset();
+              depositFlow.reset();
+              setBalanceBefore(null);
+            })
+          }
+        />
       </div>
     );
   }
@@ -371,15 +443,16 @@ export function DepositPanel({
           type="button"
           className="btn btn-primary btn-block"
           disabled={busy || parsed === null || parsed === 0n || insufficientBalance}
-          onClick={() =>
-            parsed &&
+          onClick={() => {
+            if (!parsed) return;
+            setBalanceBefore(vault.balance);
             depositFlow.submit({
               address: vaultAddress,
               abi: spendGuardAbi,
               functionName: "deposit",
               args: [parsed],
-            })
-          }
+            });
+          }}
         >
           {depositFlow.phase === "signing" || depositFlow.phase === "confirming"
             ? "Depositing…"

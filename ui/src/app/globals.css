@@ -1515,6 +1515,29 @@ summary:focus-visible,
   border: 1px solid var(--border);
 }
 
+/* Deposit success view: replaces the form once the deposit confirms. */
+.deposit-success {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.deposit-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  color: var(--success);
+  margin-bottom: 16px;
+}
+.deposit-success h3 {
+  margin: 0 0 8px;
+}
+.deposit-success .btn {
+  margin-top: 16px;
+}
+
 .tx-status-success {
   background: var(--success-bg);
   color: var(--text);

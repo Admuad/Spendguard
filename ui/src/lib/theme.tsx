@@ -26,8 +26,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const changeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const current = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    setTheme(current);
+    // Re-assert the theme after mount. A reload with a persisted wallet
+    // fires a React hydration mismatch, and the recovery re-render drops
+    // the data-theme attribute the blocking init script set. Reading only
+    // what is on the element would then adopt the wrong (light) theme even
+    // though the user stored dark. Stored choice wins; otherwise keep the
+    // element value the init script set.
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      // Private mode: keep whatever the init script set.
+    }
+    const next: Theme =
+      stored === "dark" || stored === "light"
+        ? stored
+        : document.documentElement.dataset.theme === "dark"
+          ? "dark"
+          : "light";
+    const root = document.documentElement;
+    root.dataset.theme = next;
+    root.style.colorScheme = next;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", next === "dark" ? "#00081d" : "#ffffff");
+    setTheme(next);
   }, []);
 
   const toggle = useCallback(() => {
@@ -101,8 +124,10 @@ export function ThemeToggle() {
 
 /**
  * Blocking inline script for <head>: resolves the theme before first paint
- * so there is no flash of the wrong theme. Stored choice wins; the OS
- * preference is only the default when nothing is stored. The theme-color
- * meta is synced here too, so the browser chrome matches on first paint.
+ * so there is no flash of the wrong theme. Stored choice wins; otherwise
+ * the default is light (Muhammed's call, 19 Nov 2026: the light theme
+ * looks better in this app, so first-time visitors get light and only
+ * keep dark if they switch to it). The theme-color meta is synced here
+ * too, so the browser chrome matches on first paint.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('${STORAGE_KEY}');var t=s==='light'||s==='dark'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#00081d':'#ffffff');}catch(e){document.documentElement.dataset.theme='light';}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('${STORAGE_KEY}');var t=s==='light'||s==='dark'?s:'light';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#00081d':'#ffffff');}catch(e){document.documentElement.dataset.theme='light';}})();`;

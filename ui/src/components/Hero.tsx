@@ -66,13 +66,42 @@ export function Hero({
   // expanded slides the rest down. Default collapsed: the card is long.
   const [activityExpanded, setActivityExpanded] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const collapseRaf = useRef(0);
-  useEffect(() => () => cancelAnimationFrame(collapseRaf.current), []);
+  const activityRaf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(activityRaf.current), []);
 
   const toggleActivity = () => {
+    const card = cardRef.current;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!activityExpanded) {
-      cancelAnimationFrame(collapseRaf.current);
+      // Expanding: the card grows and pushes the toggle down, below the fold
+      // on a phone. Mirror the collapse compensation: scroll the window down
+      // exactly as much as the card grows, frame by frame, while the slide
+      // runs, so the toggle stays where the finger is.
+      cancelAnimationFrame(activityRaf.current);
+      if (!card) {
+        setActivityExpanded(true);
+        return;
+      }
+      const startY = window.scrollY;
+      const startH = card.offsetHeight;
       setActivityExpanded(true);
+      if (reduced) {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, startY + (card.offsetHeight - startH));
+        });
+        return;
+      }
+      const started = performance.now();
+      const step = (now: number) => {
+        const grown = card.offsetHeight - startH;
+        if (grown > 0) window.scrollTo(0, startY + grown);
+        if (now - started < 600) {
+          activityRaf.current = requestAnimationFrame(step);
+        } else {
+          window.scrollTo(0, startY + (card.offsetHeight - startH));
+        }
+      };
+      activityRaf.current = requestAnimationFrame(step);
       return;
     }
     // Collapsing: the card shrinks while the user may be scrolled to its
@@ -80,14 +109,12 @@ export function Hero({
     // So scroll the window up exactly as much as the card shrinks, frame
     // by frame, while the slide runs: the toggle stays under the finger
     // and everything below the card stays in place.
-    const card = cardRef.current;
     if (!card) {
       setActivityExpanded(false);
       return;
     }
     const startY = window.scrollY;
     const startH = card.offsetHeight;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setActivityExpanded(false);
     if (reduced) {
       requestAnimationFrame(() => {
@@ -100,12 +127,12 @@ export function Hero({
       const shrunk = startH - card.offsetHeight;
       if (shrunk > 0) window.scrollTo(0, Math.max(0, startY - shrunk));
       if (now - started < 600) {
-        collapseRaf.current = requestAnimationFrame(step);
+        activityRaf.current = requestAnimationFrame(step);
       } else {
         window.scrollTo(0, Math.max(0, startY - (startH - card.offsetHeight)));
       }
     };
-    collapseRaf.current = requestAnimationFrame(step);
+    activityRaf.current = requestAnimationFrame(step);
   };
 
   return (

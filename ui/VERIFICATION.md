@@ -1066,3 +1066,17 @@ plain `next build` (the Vercel build) exit 0.
 Screenshots in `verification/`: round13-keys-1440, round13-keys-390,
 round13-keys-390-owner, round13-wallet-wait-1440, twocard-settings-anon-1440,
 twocard-keys-owner-1440, twocard-keys-fresh-1440.
+
+## Round 14 — stress-test flaws fixed + theme default light + deposit success (19 Nov evening, LOCAL, not pushed)
+
+Two real flaws from the 9-case stress test (script `~/workspace/tools/pw-verify/stress-robustness.mjs`), both fixed locally and verified. Everything else in the stress test held: theme toggle x10 on all 6 pages, tab switching x20, deposit modal open/close x10, mobile menu spam, grant form + revoke pop-up, resize 390-1440-390, reload with modal open. Vault switching was not testable (only one vault in the switcher).
+
+**Flaw 1 — "Show all activity" expand shoved the toggle off-screen (390).** Expanding moved the toggle 398 to 878px (+480px, below the fold); collapse was already compensated (round 5) but expand was not. Fix (`Hero.tsx` `toggleActivity`): expand now mirrors the collapse compensation, a rAF loop that scrolls the window down exactly as much as the card grows, so the toggle stays under the finger. Verified (`flaw-fixes-verify.mjs` + `flaw1-rerun.mjs`): expand drift **-1px** (was +480), collapse drift **1px**, no page errors. Note: the first probe measured -545px because Playwright's click scrolled the toggle into view before the baseline was taken; re-measured after `scrollIntoViewIfNeeded`, drift -1px.
+
+**Flaw 2 — dark theme lost on reload with a connected wallet.** Reload with a persisted wallet fired the known React #418 hydration mismatch; the recovery re-render dropped the `data-theme` attribute the init script set, so the page rendered light against a stored dark choice until the user toggled. Fix (`lib/theme.tsx` `ThemeProvider` mount effect): it now re-asserts the theme after mount, stored choice wins, otherwise keeps the element value, and writes `dataset.theme` + `colorScheme` + `theme-color`. Verified: before reload dark / `rgb(10, 10, 10)`; after reload still dark, same background, wallet still connected.
+
+**Theme default light (his call, 19 Nov).** `THEME_INIT_SCRIPT` now defaults to light when nothing is stored (was `prefers-color-scheme: dark`); a stored choice still wins. Verified: fresh visitor with a dark OS gets light; stored dark still wins.
+
+**Deposit success (proposal, awaiting his pick).** Built locally: `DepositSuccess` in `VaultApp.tsx`, `DepositPanel` `onDone` (optional; modal case closes, inline case resets the form), `Overview` passes the close, CSS in `globals.css`, temp preview route `preview-deposit-success` (delete before push). Typecheck exit 0, Pages build exit 0, preview verified 14/14 at 390 light + dark.
+
+**Push status: nothing from this round is pushed yet.** The next push, after his deposit pick, ships: `lib/theme.tsx` (theme default + flaw 2), `components/Hero.tsx` (flaw 1), `components/VaultApp.tsx` + `components/app/Overview.tsx` + `globals.css` (deposit success), with the preview route deleted first.

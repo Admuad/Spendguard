@@ -236,6 +236,7 @@ export function Overview() {
             tokenBalance={app.tokenBalance}
             allowance={app.allowance}
             refreshTokenData={app.refreshTokenData}
+            onDone={() => setDepositOpen(false)}
           />
         </Modal>
       )}
