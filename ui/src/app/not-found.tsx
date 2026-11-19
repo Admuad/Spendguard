@@ -24,7 +24,6 @@ export default function NotFound() {
       <div className="nf-wrap">
         <p className="nf-eyebrow">Error 404 · Lost key</p>
         <div className="nf-scene">
-          <span className="nf-glow" aria-hidden="true" />
           <div className="nf-404">
             <span className="nf-four" aria-hidden="true">
               4
@@ -37,7 +36,14 @@ export default function NotFound() {
                 onClick={tryDoor}
                 aria-label="Try the vault door"
               >
-                <svg viewBox="0 0 64 64" width="46" height="46" aria-hidden="true">
+                <svg
+                  viewBox="0 0 64 64"
+                  width="46"
+                  height="46"
+                  aria-hidden="true"
+                  key={denied}
+                  className={denied > 0 ? "nf-door-shake" : ""}
+                >
                   <g fill="#fff">
                     <circle cx="32" cy="25" r="8.5" />
                     <path d="M27.5 28H36.5L40 43.5Q40.4 47 36.6 47H27.4Q23.6 47 24 43.5Z" />
@@ -57,15 +63,12 @@ export default function NotFound() {
               className={denied > 0 ? "nf-shake" : ""}
             />
           </span>
-          <span className="nf-spark nf-spark-1" aria-hidden="true" />
-          <span className="nf-spark nf-spark-2" aria-hidden="true" />
-          <span className="nf-spark nf-spark-3" aria-hidden="true" />
           {showNope && <span className="nf-nope">Nope, wrong key.</span>}
         </div>
         <h1 className="nf-title">This key opens nothing.</h1>
         <p className="nf-sub">
-          The page you are looking for is not in this vault. It may have
-          been revoked, moved, or it never existed.
+          The page you followed does not exist. It may have moved, or the
+          link was never quite right.
         </p>
         <div className="nf-actions">
           <a className="btn btn-primary" href={`${BASE_PATH}/`}>

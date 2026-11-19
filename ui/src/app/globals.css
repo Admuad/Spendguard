@@ -1939,15 +1939,26 @@ summary:focus-visible,
   justify-content: center;
 }
 
-/* One uniform modal tone: the close button and the dashed box inside a
-   modal share the sheet's exact colour instead of sitting on translucent
-   --surface-2, which renders lighter and splits the modal into two
-   blacks. The dashed border still defines the box, the ring still
-   defines the close button. Scoped to .modal so empty states elsewhere
-   (dashboard, activity) keep their subtle panel. */
+/* One uniform modal tone: the close button, the dashed box, the panel
+   and the recipient chips inside a modal share the sheet's exact colour
+   instead of sitting on translucent --surface / --surface-2, which
+   render lighter and split the modal into two blacks. The dashed border
+   still defines the box, the ring still defines the close button, and a
+   chip keeps its pill outline. Scoped to .modal so panels and empty
+   states elsewhere (dashboard, activity) keep their subtle panel.
+   The panel's own border and shadow go too: inside a modal the panel
+   IS the modal's content, and its border would draw a rectangle
+   hugging the text. */
 .modal .modal-close,
-.modal .empty-state {
+.modal .empty-state,
+.modal .panel,
+.modal .recipient-chip {
   background: var(--modal-bg);
+}
+
+.modal .panel {
+  border: none;
+  box-shadow: none;
 }
 
 .modal h3 {
@@ -4062,25 +4073,12 @@ summary:focus-visible,
   padding: 28px 0 8px;
 }
 
-.nf-glow {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 300px;
-  height: 300px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(3, 70, 255, 0.22), transparent 65%);
-  pointer-events: none;
-  animation: nf-pulse 3.2s ease-in-out infinite;
-}
-
 .nf-404 {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 18px;
 }
 
 .nf-four {
@@ -4154,34 +4152,9 @@ summary:focus-visible,
   animation: nf-shake 0.5s ease;
 }
 
-.nf-spark {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: nf-twinkle 2.4s ease-in-out infinite;
-}
-
-.nf-spark-1 {
-  left: 6%;
-  top: 18%;
-}
-
-.nf-spark-2 {
-  right: 10%;
-  bottom: 12%;
-  width: 6px;
-  height: 6px;
-  animation-delay: 0.8s;
-}
-
-.nf-spark-3 {
-  left: 16%;
-  bottom: 22%;
-  width: 5px;
-  height: 5px;
-  animation-delay: 1.5s;
+/* The door itself rattles a little when you tap it, along with the key. */
+.nf-door-shake {
+  animation: nf-door-shake 0.5s ease;
 }
 
 .nf-nope {
@@ -4259,27 +4232,19 @@ summary:focus-visible,
   }
 }
 
-@keyframes nf-twinkle {
+@keyframes nf-door-shake {
   0%,
   100% {
-    opacity: 0.25;
-    transform: scale(0.7);
+    transform: rotate(0) translateX(0);
+  }
+  25% {
+    transform: rotate(-5deg) translateX(-2px);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.15);
+    transform: rotate(4deg) translateX(2px);
   }
-}
-
-@keyframes nf-pulse {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.08);
+  75% {
+    transform: rotate(-3deg) translateX(-1px);
   }
 }
 
@@ -4301,11 +4266,10 @@ summary:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nf-glow,
   .nf-dial,
   .nf-key,
-  .nf-spark,
-  .nf-shake {
+  .nf-shake,
+  .nf-door-shake {
     animation: none;
   }
 }

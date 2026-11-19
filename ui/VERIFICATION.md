@@ -913,3 +913,46 @@ rgb(255,255,255) light; menu still solid both themes; no errors).
 Round 8 re-run alongside: 21/21 PASS.
 
 Screenshots in `verification/`: round9-390-deposit-modal-{dark,light}.
+
+## Feedback round 10: the panel was the second gray (19 Nov 2026)
+
+Muhammed was right to push back: round 9 still showed two grays in
+the Deposit modal, a lighter rectangle hugging the title and paragraph
+with its edge tight on the text. Pixel sampling of the round-9
+screenshot proved it: the sheet was rgb(36,36,36) but the area behind
+the title and paragraph was rgb(47,47,47). Cause: DepositPanel renders
+its content in a `.panel`, whose background is translucent --surface
+(5% white in dark mode, which composites to 47 over the #242424
+sheet). The round-9 checks only measured .modal, .modal-close and
+.empty-state, so they never saw the panel. Lesson: measure the render,
+not the DOM. Fix: inside a modal, .panel and .recipient-chip share the
+sheet's exact colour, and the panel's border and shadow are removed
+(inside a modal the panel IS the content; its border would draw a
+rectangle hugging the text). Only one modal exists in the app (Deposit).
+
+Verify suite `~/workspace/tools/pw-verify/round10-verify.mjs`:
+10/10 PASS (panel matches the sheet in both themes). Plus a pixel
+scan `modal-pixel-scan.py` over the screenshots: dark sheet tone
+86.2% of the modal, light sheet 90.6%, no second tone above 1.5%.
+The scan caught its own bug first (it threw out the white sheet as
+"light text" in light mode) and a false positive (light secondary
+text #6b7280); both fixed by theme-aware text exclusion. The
+owner-connected Deposit form state could not be verified: the mock
+wallet connect timed out in the probe, so the form state is covered
+by the same .panel rule only, not by a screenshot.
+
+Screenshots in `verification/`: round10-390-deposit-modal-{dark,light}.
+
+## Feedback round 10b: 404 polish (19 Nov 2026)
+
+Muhammed on the 404: remove the floating sparkles and the glow; space
+the 4s further from the vault door; the "not in this vault" copy was
+wrong for a site-wide error page; keep the tap-the-vault tip. Done:
+sparkles and glow deleted (and their keyframes); the 404 row gap is
+6px to 18px; the sub now reads "The page you followed does not exist.
+It may have moved, or the link was never quite right."; tapping the
+door now rattles the door itself (a small keyhole shake) as well as
+the key. The floating key, the spinning dial ring, the "Nope, wrong
+key." bubble and the tip line stay.
+
+Re-ran `round8-verify.mjs`: 21/21 PASS.
