@@ -793,3 +793,41 @@ jump. No page errors.
 
 Screenshots in `verification/`: round5-390-landing-collapsed,
 round5-390-landing-expanded.
+
+## Feedback round 6: light-mode card separation + airy mobile hero (19 Nov 2026)
+
+Two related notes from Muhammed's phone:
+
+1. **Light-mode modules look like they touch.** The dashboard card
+   and the stat strip below it are properly separated in dark mode
+   but read as one slab in light mode. Measured: the gap is identical
+   in both themes (56px rendered, 64px wrap margin minus the strip's
+   -8px), so it is a contrast illusion, not a spacing bug: both cards
+   are white on a white page and the faint #e5e7eb edge vanishes.
+   Fix, light mode only (dark is fine as-is): both cards get a
+   slightly stronger border (#d5d9df) and the strip a deeper shadow,
+   so each reads as its own object on white.
+2. **The top hero stack feels packed on mobile.** The eyebrow pill,
+   headline, subtitle and CTAs are crammed into the first screen, a
+   bad first impression. Fix, mobile only (late <=640px block): the
+   headline drops 32px to 30px with looser line-height, the eyebrow
+   shrinks to 11px, the mobile subtitle is cut to one sentence
+   ("Deposit once, grant a key with a cap and an expiry, take it back
+   in one click." — the on-chain line stays on desktop and is repeated
+   in the capabilities section), and the gaps between the rows open up
+   (h1 margin 20 to 24px, sub margin 14 to 18px, CTA row 24 to 28px).
+   The dashboard card still starts on the first screen (406px at 390).
+
+Note: a full overflow audit (`round6-overflow-audit.mjs`) run during
+this round found the landing's capabilities carousel extending past
+the viewport edge at 360/390 — that is the intended scroll-snap peek,
+not a bug (document width stays 360/390, no page-level scroll). App
+pages and the Deposit modal were clean at both widths.
+
+Verify suite `~/workspace/tools/pw-verify/round6-verify.mjs`: 18/18
+PASS (hero 30px / 2-line headline / 2-line sub / 11px eyebrow in
+both themes, light borders #d5d9df + deeper strip shadow, dark
+borders untouched, gap unchanged at 56px, no overflow, no errors).
+
+Screenshots in `verification/`: round6-390-landing-light,
+round6-390-landing-dark.

@@ -121,7 +121,7 @@ export function Hero({
         </p>
         <p className="hero-sub hero-sub-short">
           Deposit once, grant a key with a cap and an expiry, take it back
-          in one click. Enforced on-chain, not by the interface.
+          in one click.
         </p>
         <div className="hero-cta-row">
           <a href={APP_URL} className="btn btn-white">

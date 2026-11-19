@@ -90,6 +90,19 @@
   background: #161616;
 }
 
+/* Light mode: the dashboard card and the stat strip are both white on a
+   white page, so their faint #e5e7eb edges vanish and the two modules
+   read as one slab that looks like they touch. Give both a slightly
+   stronger edge (and the strip a deeper shadow) in light mode only;
+   dark mode separates fine as-is. */
+[data-theme="light"] .dash-card,
+[data-theme="light"] .stat-strip {
+  border-color: #d5d9df;
+}
+[data-theme="light"] .stat-strip {
+  box-shadow: 0 14px 36px rgba(3, 20, 80, 0.12), 0 2px 10px rgba(3, 20, 80, 0.08);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -2694,21 +2707,28 @@ summary:focus-visible,
 
   .hero-sub-short {
     display: block;
-    margin-top: 14px;
+    margin-top: 18px;
   }
 
   /* Mobile hero fit: this later <=640px block is the single source of
      truth for small-screen hero type. The earlier <=420/<=480/<=360
-     h1 rules are dead (this block wins the cascade), so tune here. */
+     h1 rules are dead (this block wins the cascade), so tune here.
+     The top stack felt packed on phones, so the type is a touch
+     smaller and the rows get more air between them. */
   .hero h1 {
-    font-size: 32px;
-    line-height: 1.15;
-    margin-top: 20px;
+    font-size: 30px;
+    line-height: 1.2;
+    margin-top: 24px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    padding: 7px 12px;
   }
 
   .hero-cta-row {
     flex-wrap: nowrap;
-    margin-top: 24px;
+    margin-top: 28px;
   }
 
   .hero-cta-row .btn {
