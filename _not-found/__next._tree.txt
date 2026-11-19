@@ -1,4 +1,4 @@
 :HL["/Spendguard/_next/static/chunks/2k-tooldf9auj.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
-0:{"b":"zYDApQqJayxqIxo_kyQp4","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"4gMKg7im7cdRKtpP39G3d","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
