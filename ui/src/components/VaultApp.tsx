@@ -1497,6 +1497,21 @@ export function AgentPanel({
     recipient !== "" &&
     problems.length === 0;
 
+  // The form only exists when the session can actually pay. When the
+  // session is revoked, expired, or the vault is paused, the page shows
+  // only the session card and the one reason line.
+  const sessionReason =
+    mySession === null
+      ? null
+      : !mySession.active
+        ? "Your session is revoked. Ask the owner for a fresh grant."
+        : expired
+          ? "Your session has expired. Ask the owner for a fresh grant."
+          : vault.paused
+            ? "The vault is paused. Payments are frozen until the owner unpauses."
+            : null;
+  const usable = mySession !== null && sessionReason === null;
+
   const busy = payFlow.phase === "signing" || payFlow.phase === "confirming";
 
   if (!isConnected || !address) {
@@ -1583,72 +1598,88 @@ export function AgentPanel({
         </div>
       </div>
 
-      <div className="field">
-        <label htmlFor="pay-recipient">Recipient (from your allowlist)</label>
-        <select
-          id="pay-recipient"
-          className="select"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-          disabled={busy}
-        >
-          <option value="">Choose a recipient…</option>
-          {mySession.recipients.map((r) => (
-            <option key={r} value={r}>
-              {shortenAddress(r)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="field">
-        <label htmlFor="pay-amount">Amount</label>
-        <div className="amount-wrap">
-          <input
-            id="pay-amount"
-            className="input"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            disabled={busy}
+      {!usable ? (
+        <>
+          <p className="error-text">{sessionReason}</p>
+          <TxStatus
+            phase={payFlow.phase}
+            hash={payFlow.hash}
+            errorMessage={payFlow.errorMessage}
+            successLabel="Payment executed. The audit trail updates live."
           />
-          <span className="amount-suffix">tUSD8</span>
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor="pay-recipient">Recipient (from your allowlist)</label>
+            <select
+              id="pay-recipient"
+              className="select"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              disabled={busy}
+            >
+              <option value="">Choose a recipient…</option>
+              {mySession.recipients.map((r) => (
+                <option key={r} value={r}>
+                  {shortenAddress(r)}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {problems.map((problem) => (
-        <p key={problem} className="error-text">
-          {problem}
-        </p>
-      ))}
+          <div className="field">
+            <label htmlFor="pay-amount">Amount</label>
+            <div className="amount-wrap">
+              <input
+                id="pay-amount"
+                className="input"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled={busy}
+              />
+              <span className="amount-suffix">tUSD8</span>
+            </div>
+          </div>
 
-      <button
-        type="button"
-        className="btn btn-primary btn-block"
-        disabled={!canPay || busy}
-        onClick={() => {
-          if (!canPay || parsed === null) return;
-          setPaid({
-            amount: parsed,
-            recipient: recipient as Address,
-            remainingCapBefore: mySession.remainingCap,
-          });
-          payFlow.submit({
-            address: vaultAddress,
-            abi: spendGuardAbi,
-            functionName: "executePayment",
-            args: [address, recipient as Address, parsed],
-          });
-        }}
-      >
-        {busy ? "Paying…" : `Pay ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
-      </button>
-      <TxStatus
-        phase={payFlow.phase}
-        hash={payFlow.hash}
-        errorMessage={payFlow.errorMessage}
-        successLabel="Payment executed. The audit trail updates live."
-      />
+          {problems.length > 0 && (
+            <ul className="pay-problems">
+              {problems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          )}
+
+          <button
+            type="button"
+            className="btn btn-primary btn-block pay-btn"
+            disabled={!canPay || busy}
+            onClick={() => {
+              if (!canPay || parsed === null) return;
+              setPaid({
+                amount: parsed,
+                recipient: recipient as Address,
+                remainingCapBefore: mySession.remainingCap,
+              });
+              payFlow.submit({
+                address: vaultAddress,
+                abi: spendGuardAbi,
+                functionName: "executePayment",
+                args: [address, recipient as Address, parsed],
+              });
+            }}
+          >
+            {busy ? "Paying…" : `Pay ${parsed ? formatTusd8(parsed) : "…"} tUSD8`}
+          </button>
+          <TxStatus
+            phase={payFlow.phase}
+            hash={payFlow.hash}
+            errorMessage={payFlow.errorMessage}
+            successLabel="Payment executed. The audit trail updates live."
+          />
+        </>
+      )}
     </div>
   );
 }

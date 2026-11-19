@@ -1561,6 +1561,28 @@ summary:focus-visible,
   line-height: 1.55;
 }
 
+/* Pay page: all amount/recipient problems as one plain red bullet list, no
+   box or border. The Pay button reads grey, not faded blue, when it cannot
+   be pressed, so it never looks clickable. */
+.pay-problems {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pay-problems li {
+  margin: 2px 0;
+}
+
+.pay-btn:disabled {
+  background: var(--surface-3);
+  color: var(--text-2);
+  box-shadow: none;
+  opacity: 1;
+}
+
 .muted {
   color: var(--text-2);
 }
