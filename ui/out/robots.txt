@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://admuad.github.io/Spendguard/sitemap.xml
