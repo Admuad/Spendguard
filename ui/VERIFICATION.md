@@ -831,3 +831,36 @@ borders untouched, gap unchanged at 56px, no overflow, no errors).
 
 Screenshots in `verification/`: round6-390-landing-light,
 round6-390-landing-dark.
+
+## Feedback round 7: theme toggle into the menu + connect styles (19 Nov 2026)
+
+Muhammed: the top still feels packed; move the theme toggle into the
+hamburger menu on mobile, and the Connect wallet button is too big,
+maybe an icon, but an icon might be too small. Explore styles.
+
+- **Toggle move (shipped):** the navbar toggle is wrapped in
+  `.nav-theme` and hidden below 860px; the mobile menu gains an
+  "Appearance" row with the same `ThemeToggle`. The toggle is styled
+  for the dark hero navbar, so the menu row overrides it to theme
+  colours (`--surface-2` background, `--border` border/track,
+  `--text` thumb) or it would be white-on-white in light mode, where
+  the menu is a white panel. Desktop is unchanged.
+- **Connect styles (explored, then picked):** `ConnectButton` takes a
+  `variant`: full (current 124px "Connect wallet"), compact (84px
+  "Connect"), icon (44px square wallet icon), icon-text (108px wallet
+  + "Connect"). All keep the 44px height, so the tap target never
+  shrinks, only the width does. Explored on a temporary
+  `/preview-nav/` route (deleted after the pick, never pushed).
+  **Muhammed picked icon-text**; it is now the `Navbar` default.
+
+Verify suites: `round7-verify.mjs` 24/24 PASS (toggle hidden, menu
+row readable and flips the theme both ways, all four widths/heights,
+no errors). `round7b-verify.mjs` 12/12 PASS on the shipped default
+(icon + "Connect", 108px, 44px, both themes). Note: the first 7b run
+timed out on the activity wait (slow cold-cache RPC scan) and the
+typecheck showed a stale `.next/types` error from the deleted preview
+route; both cleared on a clean rebuild, typecheck passes.
+
+Screenshots in `verification/`: round7-nav-{full,compact,icon,
+icon-text}-{dark,light}, round7-390-menu-{dark,light},
+round7b-390-navbar-{dark,light}.

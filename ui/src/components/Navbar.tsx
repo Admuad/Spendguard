@@ -7,7 +7,7 @@ import { injected } from "wagmi/connectors";
 import { ThemeToggle } from "@/lib/theme";
 import { APP_URL, BASE_PATH } from "@/lib/site";
 import { LogoLockup } from "./Logo";
-import { Menu, X } from "lucide-react";
+import { Menu, Wallet, X } from "lucide-react";
 import { aevumTestnet } from "@/lib/config";
 import { plainConnectErrorMessage, plainSwitchErrorMessage, shortenAddress } from "@/lib/format";
 
@@ -65,7 +65,19 @@ function NavErrorPopover({ message, onDismiss }: { message: string; onDismiss: (
   );
 }
 
-export function ConnectButton({ className = "" }: { className?: string }) {
+/** Mobile connect styles, explored with Muhammed (Nov 2026): the full
+ * "Connect wallet" pill is too wide on phones. `compact` is a shorter
+ * label, `icon` is a 44px wallet icon, `icon-text` is icon + "Connect".
+ * All keep the 44px height, so the tap target stays at the minimum. */
+export type ConnectVariant = "full" | "compact" | "icon" | "icon-text";
+
+export function ConnectButton({
+  className = "",
+  variant = "full",
+}: {
+  className?: string;
+  variant?: ConnectVariant;
+}) {
   const { address, isConnected, chainId } = useAccount();
   const { connect, isPending, error: connectError, reset: resetConnect } = useConnect();
   const { disconnect } = useDisconnect();
@@ -85,18 +97,36 @@ export function ConnectButton({ className = "" }: { className?: string }) {
   const wrongChain = isConnected && chainId !== aevumTestnet.id;
 
   if (!isConnected || !address) {
+    const variantClass =
+      variant === "icon"
+        ? "nav-cta-icon"
+        : variant === "icon-text"
+          ? "nav-cta-icon-text"
+          : "";
     return (
       <div style={{ position: "relative" }}>
         <button
           type="button"
-          className={`btn btn-primary nav-cta ${className}`}
+          className={`btn btn-primary nav-cta ${variantClass} ${className}`}
+          aria-label={variant === "icon" ? "Connect wallet" : undefined}
           disabled={isPending}
           onClick={() => {
             resetConnect();
             connect({ connector: injected() });
           }}
         >
-          {isPending ? "Connecting…" : "Connect wallet"}
+          {variant === "icon" ? (
+            <Wallet size={20} aria-hidden="true" />
+          ) : variant === "icon-text" ? (
+            <>
+              <Wallet size={18} aria-hidden="true" />
+              {isPending ? "Connecting…" : "Connect"}
+            </>
+          ) : variant === "compact" ? (
+            isPending ? "Connecting…" : "Connect"
+          ) : (
+            isPending ? "Connecting…" : "Connect wallet"
+          )}
         </button>
         {connectError && (
           <NavErrorPopover
@@ -206,7 +236,7 @@ export function ConnectButton({ className = "" }: { className?: string }) {
   );
 }
 
-export function Navbar() {
+export function Navbar({ connectVariant = "icon-text" }: { connectVariant?: ConnectVariant } = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isConnected } = useAccount();
   const pathname = usePathname();
@@ -266,8 +296,12 @@ export function Navbar() {
           ))}
         </nav>
         <div className="nav-actions">
-          <ThemeToggle />
-          <ConnectButton />
+          {/* The theme switch lives in the hamburger menu on phones
+             (hidden below 860px); on desktop it stays in the bar. */}
+          <span className="nav-theme">
+            <ThemeToggle />
+          </span>
+          <ConnectButton variant={connectVariant} />
           <button
             type="button"
             className="hamburger"
@@ -293,6 +327,10 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
+            <div className="mobile-menu-theme">
+              <span>Appearance</span>
+              <ThemeToggle />
+            </div>
             {!isConnected && <MobileConnect />}
           </div>
         </>

@@ -2076,6 +2076,47 @@ summary:focus-visible,
   .theme-toggle {
     padding-right: 8px;
   }
+  /* The theme switch moves into the hamburger menu on phones, so the
+     top bar is just logo, connect and menu. */
+  .nav-theme {
+    display: none;
+  }
+  /* Compact connect styles (mobile only; desktop keeps the full pill).
+     Heights stay 44px, so the tap target is unchanged, only the width
+     shrinks. */
+  .nav-cta-icon {
+    width: 44px;
+    padding: 0;
+  }
+  .nav-cta-icon-text {
+    padding: 0 14px;
+    gap: 6px;
+  }
+  .mobile-menu-theme {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  /* The toggle is styled for the dark hero navbar (white pill); inside
+     the menu it must read on the menu's own surface in both themes. */
+  .mobile-menu-theme .theme-toggle {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .mobile-menu-theme .theme-toggle-track {
+    background: var(--border);
+  }
+  .mobile-menu-theme .theme-toggle-thumb {
+    background: var(--text);
+    color: var(--bg);
+  }
   .hamburger {
     display: inline-flex;
   }
