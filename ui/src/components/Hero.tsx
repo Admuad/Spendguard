@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { VaultActivity, VaultData } from "@/lib/useVaultData";
 import {
   EXPLORER_URL,
@@ -9,7 +10,7 @@ import {
 } from "@/lib/config";
 import { APP_URL } from "@/lib/site";
 import { formatExpiry, formatTusd8, shortenAddress, shortenHash } from "@/lib/format";
-import { Play } from "lucide-react";
+import { ChevronDown, Play } from "lucide-react";
 
 function activityDescription(item: VaultActivity): string {
   switch (item.kind) {
@@ -61,6 +62,52 @@ export function Hero({
 }) {
   const activeSessions = vault.sessions.filter((s) => s.active).length;
 
+  // Collapsible activity list: collapsed shows just the latest item,
+  // expanded slides the rest down. Default collapsed: the card is long.
+  const [activityExpanded, setActivityExpanded] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const collapseRaf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(collapseRaf.current), []);
+
+  const toggleActivity = () => {
+    if (!activityExpanded) {
+      cancelAnimationFrame(collapseRaf.current);
+      setActivityExpanded(true);
+      return;
+    }
+    // Collapsing: the card shrinks while the user may be scrolled to its
+    // bottom. Without help the browser clamps scrollY and the page jumps.
+    // So scroll the window up exactly as much as the card shrinks, frame
+    // by frame, while the slide runs: the toggle stays under the finger
+    // and everything below the card stays in place.
+    const card = cardRef.current;
+    if (!card) {
+      setActivityExpanded(false);
+      return;
+    }
+    const startY = window.scrollY;
+    const startH = card.offsetHeight;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setActivityExpanded(false);
+    if (reduced) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, Math.max(0, startY - (startH - card.offsetHeight)));
+      });
+      return;
+    }
+    const started = performance.now();
+    const step = (now: number) => {
+      const shrunk = startH - card.offsetHeight;
+      if (shrunk > 0) window.scrollTo(0, Math.max(0, startY - shrunk));
+      if (now - started < 600) {
+        collapseRaf.current = requestAnimationFrame(step);
+      } else {
+        window.scrollTo(0, Math.max(0, startY - (startH - card.offsetHeight)));
+      }
+    };
+    collapseRaf.current = requestAnimationFrame(step);
+  };
+
   return (
     <section className="hero" id="top">
       <div className="container hero-inner">
@@ -86,7 +133,7 @@ export function Hero({
           </button>
         </div>
 
-        <div className="dash-card" aria-live="polite">
+        <div className="dash-card" aria-live="polite" ref={cardRef}>
           <div className="dash-head">
             <h2>Vault dashboard</h2>
             {vault.paused === true && <span className="badge badge-paused">Paused</span>}
@@ -140,21 +187,58 @@ export function Hero({
                 and revokes will appear here as they happen on-chain.
               </div>
             ) : (
-              vault.activity.slice(0, 5).map((item) => (
-                <div className="activity-item" key={item.hash + item.kind}>
-                  <span className="activity-kind">{KIND_LABEL[item.kind]}</span>
-                  <span className="activity-detail">{activityDescription(item)}</span>
-                  <span className="activity-amount">{activityAmount(item)}</span>
+              <>
+                <div className="activity-item" key={vault.activity[0].hash + vault.activity[0].kind}>
+                  <span className="activity-kind">{KIND_LABEL[vault.activity[0].kind]}</span>
+                  <span className="activity-detail">{activityDescription(vault.activity[0])}</span>
+                  <span className="activity-amount">{activityAmount(vault.activity[0])}</span>
                   <a
                     className="activity-hash"
-                    href={explorerTxUrl(item.hash)}
+                    href={explorerTxUrl(vault.activity[0].hash)}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {shortenHash(item.hash)} ↗
+                    {shortenHash(vault.activity[0].hash)} ↗
                   </a>
                 </div>
-              ))
+                {vault.activity.length > 1 && (
+                  <div
+                    className="dash-activity-more"
+                    id="dash-activity-more"
+                    data-expanded={activityExpanded}
+                  >
+                    <div className="dash-activity-more-inner">
+                      {vault.activity.slice(1, 5).map((item) => (
+                        <div className="activity-item" key={item.hash + item.kind}>
+                          <span className="activity-kind">{KIND_LABEL[item.kind]}</span>
+                          <span className="activity-detail">{activityDescription(item)}</span>
+                          <span className="activity-amount">{activityAmount(item)}</span>
+                          <a
+                            className="activity-hash"
+                            href={explorerTxUrl(item.hash)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shortenHash(item.hash)} ↗
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            {vault.activity.length > 1 && (
+              <button
+                type="button"
+                className="dash-activity-toggle"
+                aria-expanded={activityExpanded}
+                aria-controls="dash-activity-more"
+                onClick={toggleActivity}
+              >
+                {activityExpanded ? "Show less" : "Show all activity"}
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
             )}
             {vault.error && (
               <p className="error-text" role="alert">

@@ -670,3 +670,126 @@ Paused badge is untouched (not green, and it signals vault state).
 Verified: zero `.badge-live` elements on the landing, overview and
 keys pages, no page errors. The `.badge-live` CSS rule remains defined
 but unused.
+
+## Feedback round 3 (19 Nov 2026, early afternoon WAT)
+
+Two follow-ups from Muhammed, both from his phone screenshots of the
+dark overview:
+
+1. **Liquid-glass tab bar.** The bottom nav bar was transparent in dark
+   mode because the round-2 dark theme made `--surface` translucent
+   (5% white), so page text showed through behind the tab labels. Fix:
+   the bar now uses its own theme-aware tint (`--tabbar-bg`: 72% white
+   light / 55% near-black dark) with `backdrop-filter: blur(20px)
+   saturate(180%)`, so content behind it reads as frosted glass.
+   Toggling pages slides a glass pill between tabs: AppShell measures
+   the active link's rect and positions an absolutely-placed indicator
+   with a 0.45s springy easing (`cubic-bezier(0.22, 1, 0.36, 1)`),
+   re-measured on route change, resize and font load, and disabled
+   under `prefers-reduced-motion`.
+2. **Compact icon action row.** The Deposit button dominated the card
+   while being a dead end on the read-only demo vault, and Sweep sat at
+   half width under it (the old <=760px two-column grid with Deposit
+   spanning both columns). Now all vault controls share one compact
+   row on mobile: icon above label, equal widths, 56px tall, whether
+   two buttons show (Deposit + Sweep, read-only) or three (Deposit +
+   Grant a key + Sweep, connected owner). Desktop keeps the longer
+   row layout, now with icons too (ArrowDownToLine / KeyRound /
+   ArrowUpFromLine, lucide).
+
+Catch during verification: the desktop `.app-tab[aria-current]` rule
+paints a solid accent pill for the desktop nav, and it also matched
+the mobile tabs, so the active mobile tab rendered solid blue with a
+blue-on-blue invisible label and the glass pill hidden behind it. The
+mobile rule now sets `background: transparent` on the active tab, so
+the pill shows through and the label reads. DOM checks alone passed
+before this fix; the screenshot crop caught it.
+
+Verify suite `~/workspace/tools/pw-verify/round3-verify.mjs`: 20/20
+PASS (glass backdrop + tint, pill on Overview, pill glides to Keys,
+read-only 2 buttons 154px equal, owner 3 buttons 100px equal, same
+row, icons everywhere, desktop long row 138 vs 199 content-sized,
+54px, no page errors anywhere).
+
+Screenshots in `verification/`: round3-390-overview-dark-glass,
+round3-390-overview-owner, round3-1440-overview (plus
+round3-tabbar-crop2, the zoomed bar that confirmed the fix).
+
+## Overview icon swap (19 Nov 2026, early afternoon WAT)
+
+Muhammed still disliked the Overview tab icon (lucide
+`LayoutDashboard`, the four-square grid). First tried `Vault` (a safe
+with a dial, on-brand), but at 20px the dial's spokes read as an X in
+a box, so it was rejected on the screenshot check before shipping.
+Shipped `House` instead: a clean house outline, instantly readable at
+tab size, consistent with the other four tab pictograms. The change
+is one line in `AppShell.tsx` (`TABS`), so it covers both the mobile
+tab bar and the desktop pill nav. Verified: typecheck + build clean,
+icon SVG renders on the active tab, no page errors.
+
+## Feedback round 4 (19 Nov 2026, early afternoon WAT)
+
+Two more notes from Muhammed's phone, both about dark mode:
+
+1. **Solid modal, no glass.** The Deposit modal sheet used
+   `var(--surface)`, which is 5% white in the round-2 dark theme, so
+   the sheet was nearly see-through and the blurred page ghosted
+   through it; the backdrop also blurred the page behind. His rule:
+   liquid glass is for small areas only (the tab bar); a big modal
+   must be solid. Fix: new `--modal-bg` (white light, solid #161616
+   dark, same solid as the dark dash-card) on `.modal`, and the
+   backdrop is now a plain dim with no `backdrop-filter`. Light mode
+   is unchanged (its surface was already solid white).
+2. **Compact mobile hero.** The hero was tall on phones: 104px top
+   padding, 36px headline, wide margins, dash card starting below the
+   fold. Fix, all in the late <=640px block (which wins the cascade,
+   so it is now the single source of truth for mobile hero type; the
+   earlier <=420/<=480/<=360 h1 rules were dead): headline 36px to
+   32px, line-height 1.15, h1 margin 28px to 20px, sub margin 22px to
+   14px, CTA row margin 36px to 24px, hero top padding 104px to 92px,
+   dash-card margin 40px to 32px. Headline now fits in 2 lines at 390
+   and 360; the dash card starts 427px from the viewport top at 390.
+
+Verify suite `~/workspace/tools/pw-verify/round4-verify.mjs`: 14/14
+PASS (dark modal solid #161616 + no backdrop blur, light modal solid
+white, hero 32px / 2 lines / no overflow at 390 and 360, no page
+errors). Note: the first probe run failed with
+ERR_CONNECTION_REFUSED because the local 4173 server had died after
+/tmp was wiped; recreated `/tmp/serve/Spendguard` and restarted it.
+
+Screenshots in `verification/`: round4-390-deposit-modal-dark,
+round4-390-deposit-modal-light, round4-390-landing-dark,
+round4-360-landing-dark.
+
+## Feedback round 5: collapsible dashboard activity (19 Nov 2026)
+
+Muhammed: the landing vault dashboard card is long; make it
+collapsible, showing just one recent activity, expanding to the full
+list on tap and collapsing back, with a smooth slide and no jump when
+collapsing from the bottom of the list.
+
+Implemented in `Hero.tsx`: the activity list is split into the latest
+item (always shown) and the rest (items 2-5) inside a grid-rows
+wrapper (`0fr` to `1fr`, 0.45s easing) with a "Show all activity" /
+"Show less" toggle button under it (chevron rotates, `aria-expanded`
++ `aria-controls`). Default collapsed. No toggle when there is 0 or 1
+activity. Hidden items leave the tab order via delayed `visibility`
+so they stay visible during the slide and vanish once closed; the
+first wrapped item keeps its top separator.
+
+The no-jump requirement: collapsing while scrolled to the bottom
+would let the browser clamp scrollY and jump the page. On collapse
+the handler scrolls the window up exactly as much as the card
+shrinks, frame by frame (rAF reading the live card height) over the
+slide, so the toggle stays under the finger and everything below the
+card stays in place. Reduced-motion users get the same compensation
+applied instantly.
+
+Verify suite `~/workspace/tools/pw-verify/round5-verify.mjs`: 10/10
+PASS. Measured: card 656px collapsed to 1137px expanded; collapsing
+from the bottom moved scrollY 1045 to 564 (exactly the 481px shrink)
+while the toggle stayed at viewport top 398 before and after. Zero
+jump. No page errors.
+
+Screenshots in `verification/`: round5-390-landing-collapsed,
+round5-390-landing-expanded.

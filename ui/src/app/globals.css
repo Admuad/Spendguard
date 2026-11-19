@@ -18,6 +18,7 @@
   --bg: #ffffff;
   --bg-soft: #f5f6f8;
   --surface: #ffffff;
+  --modal-bg: #ffffff;
   --surface-2: #f5f6f8;
   --surface-3: #eef0f4;
   --text: #0a0a0a;
@@ -52,6 +53,11 @@
   --bg: #0a0a0a;
   --bg-soft: #111111;
   --surface: rgba(255, 255, 255, 0.05);
+  /* Solid, never translucent: a modal is a large surface, so liquid
+     glass does not belong here. Glass is only for small areas like the
+     tab bar; on a big sheet translucency lets the page bleed through
+     and kills readability. Same solid as the dark dash-card. */
+  --modal-bg: #161616;
   --surface-2: rgba(255, 255, 255, 0.08);
   --surface-3: rgba(255, 255, 255, 0.12);
   --text: #fafafa;
@@ -715,6 +721,70 @@ summary:focus-visible,
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 10px;
+}
+
+/* Collapsible activity list: collapsed shows only the latest item, the
+   rest slide down inside a grid-rows wrapper (0fr -> 1fr) so the card
+   grows and shrinks smoothly and nothing above or below it jumps. */
+.dash-activity-more {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dash-activity-more[data-expanded="true"] {
+  grid-template-rows: 1fr;
+}
+.dash-activity-more-inner {
+  overflow: hidden;
+  min-height: 0;
+  /* Hidden only after the slide finishes, so the items stay visible
+     while collapsing and leave the tab order once fully closed. */
+  visibility: hidden;
+  transition: visibility 0s linear 0.45s;
+}
+.dash-activity-more[data-expanded="true"] .dash-activity-more-inner {
+  visibility: visible;
+  transition-delay: 0s;
+}
+/* Items inside the wrapper are mid-list, so the first one keeps its
+   top separator (it is :first-of-type inside its own parent). */
+.dash-activity-more .activity-item:first-of-type {
+  border-top: 1px solid var(--border);
+}
+
+.dash-activity-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.dash-activity-toggle:hover {
+  color: var(--text);
+}
+.dash-activity-toggle svg {
+  transition: transform 0.3s ease;
+  flex: none;
+}
+.dash-activity-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-activity-more,
+  .dash-activity-more-inner,
+  .dash-activity-toggle svg {
+    transition: none;
+  }
 }
 
 .activity-item {
@@ -1789,8 +1859,10 @@ summary:focus-visible,
   position: fixed;
   inset: 0;
   z-index: 100;
+  /* Plain dim, no blur: the backdrop should hide the page, not show
+     it blurred through the sheet. Blur belongs to small glass areas
+     only, never behind a large modal. */
   background: rgba(0, 8, 24, 0.72);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1808,7 +1880,7 @@ summary:focus-visible,
 }
 
 .modal {
-  background: var(--surface);
+  background: var(--modal-bg);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -2205,7 +2277,7 @@ summary:focus-visible,
     font-size: 16px;
   }
   .hero {
-    padding-top: 104px;
+    padding-top: 92px;
   }
   .hero-sub {
     font-size: 16px;
@@ -2214,7 +2286,7 @@ summary:focus-visible,
   /* Dashboard: balance spans the full width, the rest pair up. */
   .dash-card {
     padding: 16px;
-    margin-top: 40px;
+    margin-top: 32px;
   }
   .kpi-label {
     font-size: 12px;
@@ -2622,14 +2694,21 @@ summary:focus-visible,
 
   .hero-sub-short {
     display: block;
+    margin-top: 14px;
   }
 
+  /* Mobile hero fit: this later <=640px block is the single source of
+     truth for small-screen hero type. The earlier <=420/<=480/<=360
+     h1 rules are dead (this block wins the cascade), so tune here. */
   .hero h1 {
-    font-size: 36px;
+    font-size: 32px;
+    line-height: 1.15;
+    margin-top: 20px;
   }
 
   .hero-cta-row {
     flex-wrap: nowrap;
+    margin-top: 24px;
   }
 
   .hero-cta-row .btn {
