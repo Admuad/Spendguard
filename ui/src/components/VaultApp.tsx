@@ -34,6 +34,7 @@ import {
 import type { SessionState, VaultData } from "@/lib/useVaultData";
 import { useMyVaults, useVaultData, useWalletTokenData } from "@/lib/useVaultData";
 import { getKeyLabel, useKeyLabels } from "@/lib/keyLabels";
+import { UsageMeter } from "@/components/app/UsageMeter";
 
 /** Legacy transactions: the starter-kit docs warn some tooling mishandles
  * EIP-1559 fields on this chain, and the vault itself was deployed legacy. */
@@ -42,9 +43,9 @@ const TX_TYPE = "legacy" as const;
 // ---------------------------------------------------------------------------
 // Shared write flow: signing -> confirming -> success / plain-language error.
 // ---------------------------------------------------------------------------
-type TxPhase = "idle" | "signing" | "confirming" | "success" | "error";
+export type TxPhase = "idle" | "signing" | "confirming" | "success" | "error";
 
-function useWriteFlow(onConfirmed?: () => void) {
+export function useWriteFlow(onConfirmed?: () => void) {
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
   // wagmi's isSuccess only means the receipt arrived, and wagmi's wrapper
   // THROWS (a bare Error carrying the replayed revert reason) when a
@@ -112,7 +113,7 @@ function useWriteFlow(onConfirmed?: () => void) {
   return { hash, phase, errorMessage, submit, reset };
 }
 
-function TxStatus({
+export function TxStatus({
   phase,
   hash,
   errorMessage,
@@ -163,13 +164,12 @@ function TxStatus({
   );
 }
 
-function ConnectPrompt({ action }: { action: string }) {
+export function ConnectPrompt({ action }: { action: string }) {
   const { connect, isPending, error, reset } = useConnect();
   return (
     <div className="empty-state connect-prompt">
       <p style={{ margin: "0 0 14px" }}>
-        Connect a browser wallet (MetaMask, Rabby, or any injected wallet) to {action}. The vault
-        data above is live and readable without a wallet.
+        Connect a browser wallet (MetaMask, Rabby, or any injected wallet) to {action}.
       </p>
       <button
         type="button"
@@ -194,7 +194,7 @@ function ConnectPrompt({ action }: { action: string }) {
 // ---------------------------------------------------------------------------
 // Deposit: exact-amount approve, then deposit. No unlimited approvals.
 // ---------------------------------------------------------------------------
-function DepositPanel({
+export function DepositPanel({
   vault,
   vaultAddress,
   isOwner,
@@ -416,7 +416,7 @@ const EXPIRY_PRESETS = [
   { label: "30 days", seconds: 30 * 24 * 3600 },
 ] as const;
 
-function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
+export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
   const { isConnected } = useAccount();
   const [sessionKey, setSessionKey] = useState("");
   const [recipients, setRecipients] = useState("");
@@ -1091,7 +1091,7 @@ function EditSessionModal({
 // Sessions: every key ever granted, with live state, one-click revoke, and
 // editable bounds.
 // ---------------------------------------------------------------------------
-function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData; vaultAddress: Address; isOwner: boolean; now: number }) {
+export function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData; vaultAddress: Address; isOwner: boolean; now: number }) {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const { labels, saveLabel } = useKeyLabels();
@@ -1158,6 +1158,7 @@ function SessionsPanel({ vault, vaultAddress, isOwner, now }: { vault: VaultData
               onSaveLabel={(name) => saveLabel(vaultAddress, session.key, name)}
               isOwner={isOwner}
               now={now}
+              vaultBalance={vault.balance}
               onAskRevoke={() => setRevoking(session.key.toLowerCase())}
               onAskEdit={() => setEditing(session.key.toLowerCase())}
             />
@@ -1209,12 +1210,14 @@ function SessionRow({
   onSaveLabel,
   isOwner,
   now,
+  vaultBalance,
   onAskRevoke,
   onAskEdit,
 }: {
   session: SessionState;
   label: string | null;
   totalSpent: bigint;
+  vaultBalance: bigint | null;
   onSaveLabel: (name: string) => void;
   isOwner: boolean;
   now: number;
@@ -1225,10 +1228,6 @@ function SessionRow({
   const [draftName, setDraftName] = useState("");
   const expired = Number(session.expiresAt) * 1000 <= now;
   const status = !session.active ? "Revoked" : expired ? "Expired" : "Active";
-  const spentPct =
-    session.spendCap > 0n ? Number((session.spent * 10000n) / session.spendCap) / 100 : 0;
-  const sharePct = totalSpent > 0n ? Number((session.spent * 1000n) / totalSpent) / 10 : 0;
-  const pctLabel = spentPct % 1 === 0 ? spentPct.toFixed(0) : spentPct.toFixed(1);
 
   return (
     <div className="session-row">
@@ -1247,48 +1246,7 @@ function SessionRow({
         </div>
         <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
       </div>
-      <div className="usage">
-        <div className="usage-head">
-          <span>
-            Spent{" "}
-            <strong>
-              {formatTusd8(session.spent)} of {formatTusd8(session.spendCap)} tUSD8
-            </strong>
-          </span>
-          <span className={`usage-pct ${spentPct >= 100 ? "full" : ""} ${!session.active ? "muted" : ""}`}>
-            {spentPct >= 100 ? "Cap reached" : `${pctLabel}% of cap`}
-          </span>
-        </div>
-        <div
-          className="usage-bar"
-          role="progressbar"
-          aria-valuenow={Math.round(spentPct)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Spent ${spentPct.toFixed(1)} percent of cap`}
-        >
-          <div
-            className={`usage-bar-fill ${spentPct >= 100 ? "full" : ""} ${!session.active ? "muted" : ""}`}
-            style={{ width: `${Math.min(spentPct, 100)}%` }}
-          />
-        </div>
-        <div className="usage-foot">
-          <span>
-            Remaining <strong>{formatTusd8(session.remainingCap)} tUSD8</strong>
-          </span>
-          {totalSpent > 0n && (
-            <span>
-              Share of all spending <strong>{sharePct.toFixed(1)}%</strong>
-            </span>
-          )}
-          <span>
-            Max per payment <strong>{formatTusd8(session.maxPerTx)} tUSD8</strong>
-          </span>
-          <span>
-            Expires <strong>{formatExpiry(session.expiresAt)}</strong>
-          </span>
-        </div>
-      </div>
+      <UsageMeter session={session} vaultBalance={vaultBalance} now={now} totalSpent={totalSpent} />
       <div className="recipient-chips" aria-label="Allowed recipients">
         {session.recipients.map((recipient) => (
           <a
@@ -1360,7 +1318,7 @@ function SessionRow({
 // ---------------------------------------------------------------------------
 // Agent view: the connected wallet pays as its own session key.
 // ---------------------------------------------------------------------------
-function AgentPanel({
+export function AgentPanel({
   vault,
   vaultAddress,
   mySession,
@@ -1551,7 +1509,7 @@ function AgentPanel({
 // ---------------------------------------------------------------------------
 // Owner controls: pause / unpause / sweep. Pause never blocks the sweep.
 // ---------------------------------------------------------------------------
-function OwnerPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
+export function OwnerPanel({ vault, vaultAddress, isOwner }: { vault: VaultData; vaultAddress: Address; isOwner: boolean }) {
   const { isConnected } = useAccount();
   const [confirmingSweep, setConfirmingSweep] = useState(false);
   const [lastPauseAction, setLastPauseAction] = useState<"pause" | "unpause" | null>(null);

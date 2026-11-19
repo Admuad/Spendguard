@@ -15,7 +15,7 @@ import {
   RoleTabs,
   SetupGuide,
   StatStrip,
-  StatsBand,
+  VerifySection,
 } from "@/components/Sections";
 import { useVaultData } from "@/lib/useVaultData";
 
@@ -30,12 +30,12 @@ export default function Home() {
         <Hero vault={vault} onWatchDemo={() => setDemoOpen(true)} />
         <StatStrip vault={vault} />
         <About />
-        <Capabilities />
-        <RoleTabs />
-        <StatsBand />
-        <Bento />
-        <SetupGuide />
         <HowItWorks />
+        <Capabilities />
+        <VerifySection />
+        <Bento />
+        <RoleTabs />
+        <SetupGuide />
         <Faq />
         <CtaBanner onWatchDemo={() => setDemoOpen(true)} />
       </main>

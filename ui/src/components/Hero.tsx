@@ -7,6 +7,7 @@ import {
   explorerAddressUrl,
   explorerTxUrl,
 } from "@/lib/config";
+import { APP_URL } from "@/lib/site";
 import { formatExpiry, formatTusd8, shortenAddress, shortenHash } from "@/lib/format";
 
 function activityDescription(item: VaultActivity): string {
@@ -75,8 +76,8 @@ export function Hero({
           in one click. Enforced on-chain, not by the interface.
         </p>
         <div className="hero-cta-row">
-          <a href="#start" className="btn btn-white">
-            Get started
+          <a href={APP_URL} className="btn btn-white">
+            Open the app
           </a>
           <button type="button" className="btn btn-ghost-dark" onClick={onWatchDemo}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">

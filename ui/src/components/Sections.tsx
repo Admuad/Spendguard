@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import type { VaultData } from "@/lib/useVaultData";
 import { CountUp, Chevron, Reveal } from "./bits";
 import { LogoLockup } from "./Logo";
-import { formatTusd8 } from "@/lib/format";
+import { formatTusd8, shortenAddress } from "@/lib/format";
 import { APP_URL, BASE_PATH } from "@/lib/site";
 import {
+  DEMO_VIDEO_URL,
   DORAHACKS_URL,
   EXPLORER_URL,
+  FACTORY_ADDRESS,
   FAUCET_URL,
   REPO_URL,
   RPC_URL,
@@ -666,8 +668,8 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
             tokens.
           </p>
           <div className="hero-cta-row">
-            <a href="#start" className="btn btn-white">
-              Get started
+            <a href={APP_URL} className="btn btn-white">
+              Open the app
             </a>
             <button type="button" className="btn btn-ghost-dark" onClick={onWatchDemo}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -683,7 +685,7 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
 }
 
 export function Footer() {
-  const onAppPage = usePathname().replace(/\/$/, "").endsWith("/app");
+  const onAppPage = /^\/app(\/|$)/.test(usePathname());
   return (
     <footer className="footer">
       <div className="container">
@@ -765,5 +767,48 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Verify it yourself: every claim on this page maps to a link a judge can open.
+// ---------------------------------------------------------------------------
+export function VerifySection() {
+  const rows: { label: string; note: string; href: string; value: string }[] = [
+    { label: "Demo vault", note: "The contract behind the dashboard above", href: explorerAddressUrl(VAULT_ADDRESS), value: VAULT_ADDRESS },
+    { label: "Vault factory", note: "Anyone can create their own vault here", href: explorerAddressUrl(FACTORY_ADDRESS), value: FACTORY_ADDRESS },
+    { label: "tUSD8 token", note: "Test token held by the vault", href: explorerAddressUrl(TUSD8_ADDRESS), value: TUSD8_ADDRESS },
+    { label: "Source code", note: "Contract, tests and this interface", href: REPO_URL, value: "github.com/Admuad/Spendguard" },
+    { label: "Demo video", note: "A full grant, pay, revoke run", href: DEMO_VIDEO_URL, value: "Watch the recording" },
+    { label: "Test tokens", note: "Get tUSD8 to try it yourself", href: FAUCET_URL, value: "Aevum faucet" },
+  ];
+  return (
+    <section className="section section-tight" id="verify">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow eyebrow-dark">Verify it yourself</span>
+          <h2 className="section-title">Don&apos;t trust this page. Check the chain.</h2>
+          <p className="section-sub">
+            Every number above is read from the contract. These are the
+            addresses and sources behind it. Testnet only, and the contract
+            has not been professionally audited.
+          </p>
+        </div>
+        <ul className="verify-grid">
+          {rows.map((r) => (
+            <li key={r.label}>
+              <a className="card verify-card" href={r.href} target="_blank" rel="noreferrer">
+                <span className="verify-label">{r.label}</span>
+                <span className="verify-value">{r.value.startsWith("0x") ? shortenAddress(r.value) : r.value}</span>
+                <span className="verify-note">{r.note} ↗</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div className="hero-cta-row verify-cta">
+          <a href={APP_URL} className="btn btn-primary">Open the app</a>
+        </div>
+      </div>
+    </section>
   );
 }

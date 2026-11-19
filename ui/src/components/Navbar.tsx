@@ -209,7 +209,7 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isConnected } = useAccount();
   const pathname = usePathname();
-  const onAppPage = pathname.replace(/\/$/, "").endsWith("/app");
+  const onAppPage = /^\/app(\/|$)/.test(pathname);
   // Section anchors live on the landing page; from the app page they
   // must point home first, or they would match nothing.
   const navLinks = [
