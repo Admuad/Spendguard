@@ -2,4 +2,4 @@
 :HL["/Spendguard/_next/static/media/inter_tight_latin-s.p.1_fsb17gxmapx.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"app","h":96,"c":"$Q2"}]]
-0:{"b":"y_H3pK-7CwSOfMgQ0bskY","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"Fq8ss9iPQnPiGTNgTFgGj","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
