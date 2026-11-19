@@ -1,4 +1,4 @@
-:HL["/Spendguard/_next/static/chunks/0_waw25qfq1f9.css","style"]
+:HL["/Spendguard/_next/static/chunks/2b8zvq9k-a44q.css","style"]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
-0:{"b":"TM43va5vETpBUj1TSZ4gj","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"q14oKUwTzAjy1v4Ei5I9M","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
