@@ -3860,6 +3860,7 @@ summary:focus-visible,
   scroll-margin-top: 16px;
   /* A full-width form at desktop widths is unreadable; keep it form-wide. */
   max-width: 720px;
+  margin-inline: auto;
 }
 .keys-layout .panel-wide {
   grid-column: auto;
@@ -3868,6 +3869,7 @@ summary:focus-visible,
   display: grid;
   gap: 16px;
   max-width: 720px;
+  margin-inline: auto;
 }
 .stack-page .sec-head-wrap {
   max-width: none;
@@ -3941,6 +3943,16 @@ summary:focus-visible,
   padding: 8px 0 0;
 }
 
+/* Narrow desktop / tablet: the three Overview action buttons wrap below
+   ~1050px, leaving the third alone on its own row. Share the row evenly
+   so a wrapped button stretches full width instead of sitting alone. */
+@media (max-width: 1100px) {
+  .ov-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
 /* Tablet */
 @media (max-width: 1000px) {
   .settings-layout {
@@ -3948,6 +3960,11 @@ summary:focus-visible,
   }
   .key-cards {
     grid-template-columns: 1fr 1fr;
+  }
+  /* A lone third key card (exactly three granted) spans the full row
+     instead of sitting alone with the second column empty. */
+  .key-cards .key-card:last-child:nth-child(3) {
+    grid-column: 1 / -1;
   }
 }
 
