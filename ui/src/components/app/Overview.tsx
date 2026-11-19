@@ -161,13 +161,6 @@ export function Overview() {
               </dt>
               <dd>{protectedAmt === null ? "…" : formatTusd8(protectedAmt)}</dd>
             </div>
-            <div>
-              <dt>
-                <i className="dot dot-out" />
-                Already paid out by keys
-              </dt>
-              <dd>{formatTusd8(paidOut)}</dd>
-            </div>
           </dl>
           <p className="card-note">
             Caps are limits, not reservations: keys can never take more than the vault holds. The
