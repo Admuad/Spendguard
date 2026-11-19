@@ -1,4 +1,4 @@
-:HL["/Spendguard/_next/static/chunks/1aoorztjjxsa2.css","style"]
+:HL["/Spendguard/_next/static/chunks/1e5i_buibx75h.css","style"]
 :HL["/Spendguard/_next/static/media/inter_tight_latin-s.p.1_fsb17gxmapx.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 1:[["children",{"s":"__PAGE__","h":160}]]
-0:{"b":"WC32jY6YTFwoTxrHYw_dU","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"PAosTclwImctDY8jm6t6x","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
