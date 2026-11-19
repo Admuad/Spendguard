@@ -172,8 +172,11 @@ export function Overview() {
           </dl>
           <p className="card-note">
             Caps are limits, not reservations: keys can never take more than the vault holds. The
-            bar totals the vault balance plus what keys have already paid out, so as a key spends
-            the grey grows and the blue shrinks.
+            vault holds {balance === null ? "…" : formatTusd8(balance)} tUSD8, keys can still take{" "}
+            {atRisk === null ? "…" : formatTusd8(atRisk)} of it, so{" "}
+            {protectedAmt === null ? "…" : formatTusd8(protectedAmt)} is only yours. The bar adds
+            the {formatTusd8(paidOut)} keys already paid out, totalling{" "}
+            {barTotal === null ? "…" : formatTusd8(barTotal)}.
           </p>
         </div>
       </section>

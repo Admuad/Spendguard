@@ -29,15 +29,31 @@ Owner ──grant───>  │   Vault    │
 
 ```mermaid
 flowchart TB
-    Factory[SpendGuardFactory] -->|createVault| Vault[SpendGuard Vault]
-    Vault -->|holds| Token[tUSD8]
-    Owner[Vault owner] -->|deposit| Vault
+    subgraph chain["On chain · Aevum Testnet"]
+        direction TB
+        Factory["SpendGuardFactory"] -->|createVault| Vault["SpendGuard Vault"]
+        Vault -->|holds| Token["tUSD8"]
+    end
+    subgraph actors["Actors"]
+        direction TB
+        Owner["Vault owner"]
+        Key["Session key"]
+        Agent["Agent script · agent/agent.mjs"]
+    end
+    subgraph app["App"]
+        UI["Web UI · Overview, Keys, Pay, Activity, Settings"]
+    end
+    Owner -->|deposit| Vault
     Owner -->|grantSession: cap, per-tx limit, expiry, allowlist| Vault
-    Owner -->|revoke, pause, sweep| Vault
-    Key[Session key] -->|executePayment| Vault
-    Agent[Agent script: agent/agent.mjs] -->|executePayment as a session key| Vault
-    Vault -->|pays| Merchant[Allowlisted merchant]
-    UI[Web UI: Overview, Keys, Pay, Activity, Settings] -->|reads vault and sessions| Vault
+    Owner -->|revoke · pause · sweep| Vault
+    Key -->|executePayment| Vault
+    Agent -->|executePayment as a session key| Vault
+    Vault -->|pays| Merchant["Allowlisted merchant"]
+    UI -->|reads vault and sessions| Vault
+    classDef vault stroke:#0346FF,stroke-width:2px
+    classDef plain stroke:#888
+    class Vault vault
+    class Factory,Token,Owner,Key,Agent,UI,Merchant plain
 ```
 
 0. **Create.** Call `createVault` on the factory (or click Create vault on the demo page). You own the vault it creates, and its funds are yours alone.
