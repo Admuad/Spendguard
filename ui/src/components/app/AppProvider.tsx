@@ -13,8 +13,8 @@ import {
   factoryAbi,
 } from "@/lib/config";
 import { isValidAddress } from "@/lib/format";
-import type { SessionState, VaultData } from "@/lib/useVaultData";
-import { useMyVaults, useVaultData, useWalletTokenData } from "@/lib/useVaultData";
+import type { GrantedVault, SessionState, VaultData } from "@/lib/useVaultData";
+import { useGrantedVaults, useMyVaults, useVaultData, useWalletTokenData } from "@/lib/useVaultData";
 import { useWriteFlow } from "@/components/VaultApp";
 import type { TxPhase } from "@/components/VaultApp";
 
@@ -29,6 +29,7 @@ type AppState = {
   selected: Address;
   isDemo: boolean;
   myVaults: readonly Address[];
+  grantedVaults: readonly GrantedVault[];
   selectVault: (vault: Address) => void;
   vault: VaultData;
   tokenBalance: bigint | null;
@@ -61,8 +62,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { address, isConnected, chainId } = useAccount();
   const [now, setNow] = useState(() => Date.now());
   const { vaults: myVaults, refresh: refreshMyVaults } = useMyVaults(address);
+  const { vaults: grantedVaults } = useGrantedVaults(address);
   const [selected, setSelected] = useState<Address>(VAULT_ADDRESS);
   const [picked, setPicked] = useState(false);
+
+  const selectVault = useCallback((vaultAddr: Address) => {
+    setPicked(true);
+    setSelected(vaultAddr);
+    try {
+      window.localStorage.setItem(SELECTED_VAULT_KEY, vaultAddr);
+    } catch {
+      // Private mode: the choice lasts for this session only.
+    }
+  }, []);
 
   // Restore the stored choice after mount (a static export cannot read
   // localStorage during the server render).
@@ -80,27 +92,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
-  // First visit with a connected wallet that owns vaults: open the first own
-  // vault, unless a stored choice or an explicit pick says otherwise.
+  // First visit with a connected wallet that owns vaults, or holds a key
+  // on one: open the first own vault (or the first granted one), unless a
+  // stored choice or an explicit pick says otherwise. This goes through
+  // selectVault so the choice is stored: picking it in memory only meant
+  // a refresh dropped a key holder back to the demo vault.
   useEffect(() => {
-    if (picked || !isConnected || myVaults.length === 0) return;
+    if (picked || !isConnected) return;
     try {
       if (window.localStorage.getItem(SELECTED_VAULT_KEY) !== null) return;
     } catch {
       // ignore
     }
-    setSelected(myVaults[0]);
-  }, [picked, isConnected, myVaults]);
-
-  const selectVault = useCallback((vaultAddr: Address) => {
-    setPicked(true);
-    setSelected(vaultAddr);
-    try {
-      window.localStorage.setItem(SELECTED_VAULT_KEY, vaultAddr);
-    } catch {
-      // Private mode: the choice lasts for this session only.
-    }
-  }, []);
+    const first = myVaults[0] ?? grantedVaults[0]?.address;
+    if (first) selectVault(first);
+  }, [picked, isConnected, myVaults, grantedVaults, selectVault]);
 
   const isDemo = selected.toLowerCase() === VAULT_ADDRESS.toLowerCase();
   const vault = useVaultData(selected, isDemo ? DEPLOY_BLOCK : FACTORY_DEPLOY_BLOCK);
@@ -137,6 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selected,
     isDemo,
     myVaults,
+    grantedVaults,
     selectVault,
     vault,
     tokenBalance,

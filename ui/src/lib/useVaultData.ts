@@ -574,3 +574,91 @@ export function useMyVaults(ownerAddress: `0x${string}` | undefined) {
 
   return { vaults, refresh: load };
 }
+
+export type GrantedVault = { address: `0x${string}`; owner: `0x${string}` };
+
+/** Vaults where this wallet holds an active session key, read from the
+ * factory registry. A key holder owns no vault, so without this list the
+ * switcher can never show them the vault they were granted a key on — and
+ * after a refresh the app falls back to the demo vault, where the wallet
+ * has no session and the Pay page is dead. Only vaults with an active
+ * session are listed; the demo vault is always listed separately, and
+ * vaults the wallet owns are already in useMyVaults. Refreshed when the
+ * wallet changes; a grant or revoke after that needs a reload to appear
+ * in the switcher (the selected vault itself always shows live data). */
+export function useGrantedVaults(walletAddress: `0x${string}` | undefined) {
+  const [vaults, setVaults] = useState<GrantedVault[]>([]);
+  const vaultsRef = useRef<GrantedVault[]>([]);
+  const runRef = useRef(0);
+
+  const load = useCallback(async (): Promise<GrantedVault[]> => {
+    const myRun = ++runRef.current;
+    if (!walletAddress) {
+      vaultsRef.current = [];
+      setVaults([]);
+      return [];
+    }
+    try {
+      const count = await readClient.readContract({
+        address: FACTORY_ADDRESS,
+        abi: factoryAbi,
+        functionName: "vaultCount",
+      });
+      const addresses: `0x${string}`[] = [];
+      for (let i = 0; i < Number(count); i++) {
+        addresses.push(
+          (await readClient.readContract({
+            address: FACTORY_ADDRESS,
+            abi: factoryAbi,
+            functionName: "allVaults",
+            args: [BigInt(i)],
+          })) as `0x${string}`,
+        );
+      }
+      const next: GrantedVault[] = [];
+      await Promise.all(
+        addresses.map(async (v) => {
+          if (v.toLowerCase() === VAULT_ADDRESS.toLowerCase()) return;
+          try {
+            const [session, owner] = await Promise.all([
+              readClient.readContract({
+                address: v,
+                abi: spendGuardAbi,
+                functionName: "getSession",
+                args: [walletAddress],
+              }),
+              readClient.readContract({
+                address: v,
+                abi: spendGuardAbi,
+                functionName: "owner",
+              }),
+            ]);
+            // getSession decodes as a named object; read `active` by name
+            // with a positional fallback, as useVaultData does.
+            const s = session as unknown as { active?: boolean; 4?: boolean };
+            const active = s.active ?? s[4] ?? false;
+            const ownerAddr = owner as `0x${string}`;
+            if (active && ownerAddr.toLowerCase() !== walletAddress.toLowerCase()) {
+              next.push({ address: v, owner: ownerAddr });
+            }
+          } catch {
+            // One unreadable vault must not hide the rest.
+          }
+        }),
+      );
+      if (runRef.current !== myRun) return vaultsRef.current;
+      vaultsRef.current = next;
+      setVaults(next);
+      return next;
+    } catch {
+      // Keep the last known list; a failed read must not blank the switcher.
+      return vaultsRef.current;
+    }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  return { vaults, refresh: load };
+}

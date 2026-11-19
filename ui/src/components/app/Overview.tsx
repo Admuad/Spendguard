@@ -33,8 +33,21 @@ export function Overview() {
   const capRoom = useMemo(() => live.reduce((sum, s) => sum + s.remainingCap, 0n), [live]);
   const atRisk = balance === null ? null : capRoom < balance ? capRoom : balance;
   const protectedAmt = balance === null || atRisk === null ? null : balance - atRisk;
+  // The bar totals the vault balance plus what keys have already paid out,
+  // so all three legend rows have a segment: grey (already paid), blue
+  // (still spendable), green (only the owner can move). As a key spends the
+  // grey grows and the blue shrinks, and the total only moves on a deposit
+  // or a sweep. Tiny non-zero segments stay visible.
+  const barTotal = balance === null ? null : balance + paidOut;
+  const pctOf = (part: bigint) =>
+    barTotal === null || barTotal === 0n ? 0 : Number((part * 1000n) / barTotal) / 10;
+  const paidPct = paidOut > 0n && pctOf(paidOut) < 1.5 ? 1.5 : pctOf(paidOut);
   const riskPct =
-    balance === null || atRisk === null || balance === 0n ? 0 : Number((atRisk * 1000n) / balance) / 10;
+    atRisk === null
+      ? 0
+      : atRisk > 0n && pctOf(atRisk) < 1.5
+        ? 1.5
+        : pctOf(atRisk);
 
   const nextExpiry = useMemo(() => {
     if (live.length === 0) return null;
@@ -126,11 +139,12 @@ export function Overview() {
             className="split"
             role="img"
             aria-label={
-              balance === null || atRisk === null
+              balance === null || atRisk === null || barTotal === null
                 ? "Loading"
-                : `Of ${formatTusd8(balance)} in the vault, keys can take at most ${formatTusd8(atRisk)}; ${formatTusd8(protectedAmt ?? 0n)} only the owner can move`
+                : `Of ${formatTusd8(barTotal)} total, keys already paid out ${formatTusd8(paidOut)}, keys can still take at most ${formatTusd8(atRisk)}, and ${formatTusd8(protectedAmt ?? 0n)} only the owner can move`
             }
           >
+            <span className="split-out" style={{ width: `${paidPct}%` }} />
             <span className="split-risk" style={{ width: `${riskPct}%` }} />
           </div>
           <dl className="legend">
@@ -157,7 +171,9 @@ export function Overview() {
             </div>
           </dl>
           <p className="card-note">
-            Caps are limits, not reservations: keys can never take more than the vault holds.
+            Caps are limits, not reservations: keys can never take more than the vault holds. The
+            bar totals the vault balance plus what keys have already paid out, so as a key spends
+            the grey grows and the blue shrinks.
           </p>
         </div>
       </section>

@@ -34,14 +34,30 @@ export type HeaderVariant = "current" | "compact" | "minimal" | "inline";
 
 export function VaultHeader({ variant = "current" }: { variant?: HeaderVariant }) {
   const app = useApp();
-  const known = app.myVaults.some((v) => v.toLowerCase() === app.selected.toLowerCase());
+  const ownedHere = app.myVaults.some((v) => v.toLowerCase() === app.selected.toLowerCase());
+  const grantedHere = app.grantedVaults.find(
+    (g) => g.address.toLowerCase() === app.selected.toLowerCase(),
+  );
+  const known = app.isDemo || ownedHere || grantedHere !== undefined;
   const extra = !app.isDemo && !known ? app.selected : null;
+  // The title reads from the vault lists (fast factory reads), not from the
+  // selected vault's owner (a slower read): otherwise it flashes a bare
+  // "Vault" while the owner loads.
+  const title = app.isDemo
+    ? "Demo vault"
+    : ownedHere || app.isOwner
+      ? "Your vault"
+      : grantedHere
+        ? `${shortenAddress(grantedHere.owner)}'s vault`
+        : app.vault.owner
+          ? `${shortenAddress(app.vault.owner)}'s vault`
+          : "Vault";
 
   return (
     <div className={`app-head${variant === "current" ? "" : ` app-head-${variant}`}`}>
       <div className="app-head-main">
         <div className="app-head-title">
-          <h1>{app.isDemo ? "Demo vault" : "Your vault"}</h1>
+          <h1>{title}</h1>
         </div>
         <p className="app-head-sub">
           <a href={explorerAddressUrl(app.selected)} target="_blank" rel="noreferrer">
@@ -76,6 +92,13 @@ export function VaultHeader({ variant = "current" }: { variant?: HeaderVariant }
                     ? `Your vault ${i + 1}`
                     : "Your vault"
                   : `${app.myVaults.length > 1 ? `Your vault ${i + 1}` : "Your vault"} · ${shortenAddress(v)}`}
+              </option>
+            ))}
+            {app.grantedVaults.map((g) => (
+              <option key={g.address} value={g.address}>
+                {variant === "minimal"
+                  ? `${shortenAddress(g.owner)}'s vault`
+                  : `${shortenAddress(g.owner)}'s vault · ${shortenAddress(g.address)}`}
               </option>
             ))}
             {extra !== null && (

@@ -241,6 +241,43 @@ export function DepositSuccess({
   );
 }
 
+export function PaymentSuccess({
+  amount,
+  recipient,
+  newRemainingCap,
+  hash,
+  onDone,
+}: {
+  amount: string;
+  recipient: string;
+  newRemainingCap: string | null;
+  hash: `0x${string}` | undefined;
+  onDone: () => void;
+}) {
+  return (
+    <div className="deposit-success">
+      <span className="deposit-success-icon" aria-hidden="true">
+        <CircleCheck size={44} />
+      </span>
+      <h3>Payment successful</h3>
+      <p className="panel-desc">
+        {amount} tUSD8 sent to {recipient}.
+        {newRemainingCap !== null && <> Remaining cap now {newRemainingCap} tUSD8.</>}
+      </p>
+      {hash && (
+        <p className="panel-desc">
+          <a href={explorerTxUrl(hash)} target="_blank" rel="noreferrer">
+            View on the explorer ↗
+          </a>
+        </p>
+      )}
+      <button type="button" className="btn btn-primary btn-block" onClick={onDone}>
+        Pay again
+      </button>
+    </div>
+  );
+}
+
 export function DepositPanel({
   vault,
   vaultAddress,
@@ -1337,47 +1374,48 @@ function SessionRow({
           </a>
         ))}
       </div>
-      {editingName ? (
-        <div className="name-editor">
-          <input
-            className="input"
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            placeholder="e.g. Trading bot"
-            maxLength={60}
-            autoFocus
-            aria-label="Key name"
-          />
+      {isOwner &&
+        (editingName ? (
+          <div className="name-editor">
+            <input
+              className="input"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder="e.g. Trading bot"
+              maxLength={60}
+              autoFocus
+              aria-label="Key name"
+            />
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                onSaveLabel(draftName);
+                setEditingName(false);
+              }}
+            >
+              Save name
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => setEditingName(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            className="btn btn-outline btn-sm"
+            className="name-link"
             onClick={() => {
-              onSaveLabel(draftName);
-              setEditingName(false);
+              setDraftName(label ?? "");
+              setEditingName(true);
             }}
           >
-            Save name
+            {label === null ? "Name this key" : "Rename"}
           </button>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => setEditingName(false)}
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="name-link"
-          onClick={() => {
-            setDraftName(label ?? "");
-            setEditingName(true);
-          }}
-        >
-          {label === null ? "Name this key" : "Rename"}
-        </button>
-      )}
+        ))}
       {isOwner && session.active && (
         <div className="session-actions">
           <button type="button" className="btn btn-outline btn-sm" onClick={onAskEdit}>
@@ -1409,6 +1447,14 @@ export function AgentPanel({
   const { address, isConnected } = useAccount();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("0.10");
+  // Captured at submit so the success view shows exactly what was paid even
+  // if the form changes afterwards. The new remaining cap is exact: the
+  // payment moves precisely the approved amount, no fee.
+  const [paid, setPaid] = useState<{
+    amount: bigint;
+    recipient: Address;
+    remainingCapBefore: bigint;
+  } | null>(null);
   const payFlow = useWriteFlow(() => vault.refresh());
 
   const parsed = useMemo(() => parseTusd8(amount), [amount]);
@@ -1479,6 +1525,25 @@ export function AgentPanel({
           vault owner to grant one, with the recipients and caps your work
           needs.
         </div>
+      </div>
+    );
+  }
+
+  if (payFlow.phase === "success") {
+    return (
+      <div className="panel">
+        <PaymentSuccess
+          amount={paid ? formatTusd8(paid.amount) : "…"}
+          recipient={paid ? shortenAddress(paid.recipient) : "…"}
+          newRemainingCap={
+            paid ? formatTusd8(paid.remainingCapBefore - paid.amount) : null
+          }
+          hash={payFlow.hash}
+          onDone={() => {
+            payFlow.reset();
+            setPaid(null);
+          }}
+        />
       </div>
     );
   }
@@ -1563,6 +1628,11 @@ export function AgentPanel({
         disabled={!canPay || busy}
         onClick={() => {
           if (!canPay || parsed === null) return;
+          setPaid({
+            amount: parsed,
+            recipient: recipient as Address,
+            remainingCapBefore: mySession.remainingCap,
+          });
           payFlow.submit({
             address: vaultAddress,
             abi: spendGuardAbi,

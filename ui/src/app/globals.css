@@ -3451,6 +3451,7 @@ summary:focus-visible,
   min-height: 46px;
 }
 .split {
+  display: flex;
   height: 12px;
   border-radius: 999px;
   background: var(--success-bg);
@@ -3462,7 +3463,12 @@ summary:focus-visible,
   display: block;
   height: 100%;
   background: var(--accent);
-  border-radius: 999px;
+  min-width: 0;
+}
+.split-out {
+  display: block;
+  height: 100%;
+  background: var(--text-3);
   min-width: 0;
 }
 .legend {
