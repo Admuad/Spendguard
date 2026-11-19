@@ -157,7 +157,7 @@ export function Overview() {
             <div>
               <dt>
                 <i className="dot dot-safe" />
-                Only you can move
+                Only the owner can move
               </dt>
               <dd>{protectedAmt === null ? "…" : formatTusd8(protectedAmt)}</dd>
             </div>
@@ -169,6 +169,9 @@ export function Overview() {
               <dd>{formatTusd8(paidOut)}</dd>
             </div>
           </dl>
+          <p className="card-note">
+            Caps are limits, not reservations: keys can never take more than the vault holds.
+          </p>
         </div>
       </section>
 
