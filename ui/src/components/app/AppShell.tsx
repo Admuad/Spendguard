@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Activity, CreditCard, KeyRound, LayoutDashboard, Settings } from "lucide-react";
+import { Activity, CreditCard, House, KeyRound, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useSwitchChain } from "wagmi";
 import { VAULT_ADDRESS, aevumTestnet, explorerAddressUrl } from "@/lib/config";
@@ -13,7 +13,7 @@ import { TxStatus } from "@/components/VaultApp";
 import { useApp } from "./AppProvider";
 
 const TABS = [
-  { href: "/app/", label: "Overview", icon: LayoutDashboard },
+  { href: "/app/", label: "Overview", icon: House },
   { href: "/app/keys/", label: "Keys", icon: KeyRound },
   { href: "/app/pay/", label: "Pay", icon: CreditCard },
   { href: "/app/activity/", label: "Activity", icon: Activity },
