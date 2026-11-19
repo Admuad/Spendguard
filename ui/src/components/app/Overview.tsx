@@ -161,14 +161,14 @@ export function Overview() {
               </dt>
               <dd>{protectedAmt === null ? "…" : formatTusd8(protectedAmt)}</dd>
             </div>
+            <div className="legend-history">
+              <dt>
+                <i className="dot dot-out" />
+                Already paid out by keys
+              </dt>
+              <dd>{formatTusd8(paidOut)}</dd>
+            </div>
           </dl>
-          <p className="card-note">
-            Caps are limits, not reservations: keys can never take more than the vault holds. The
-            bar is the vault balance of {balance === null ? "…" : formatTusd8(balance)} tUSD8:
-            keys can still take {atRisk === null ? "…" : formatTusd8(atRisk)} of it, so{" "}
-            {protectedAmt === null ? "…" : formatTusd8(protectedAmt)} is only yours. Keys have
-            paid out {formatTusd8(paidOut)} so far.
-          </p>
         </div>
       </section>
 
