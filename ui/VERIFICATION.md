@@ -984,3 +984,41 @@ Connect button in the navbar and none in the mobile menu.
 
 Screenshots in `verification/`: round11-390-menu-light-after-switch,
 round11-390-menu-light, round11-390-404-light-menu.
+
+## Feedback round 12: header redesign, Inline picked, DEMO badge removed (19 Nov 2026)
+
+Muhammed: the top of the Overview page (the orange-boxed header: title +
+badge + address line + full-width vault switcher) looked untidy; explore
+cleaner options for mobile and desktop. Boundary: change ONLY the header,
+nothing below it. Three variants were built in `AppShell.tsx` /
+`globals.css` (`HeaderVariant = "current" | "compact" | "minimal" |
+"inline"`) and previewed on a temporary `/preview-header/` route (real
+Overview page, `?v=` picks the variant; never pushed, deleted after the
+pick). First full-page screenshots were too tall to read on a phone, so
+the choice was re-shown as viewport shots of the top of the page at full
+mobile width.
+
+Muhammed picked Inline and asked to remove the blue DEMO badge. Shipped:
+AppShell default is now `inline` (title + address link, description
+hidden, vault switcher borderless and transparent), and the `demo-badge`
+is no longer rendered anywhere (the title still reads "Demo vault", and
+the read-only banner still explains it). The other two variants stay in
+the code, unused, in case he wants to compare again.
+
+Verify suite `~/workspace/tools/pw-verify/header-live-check.mjs` on the
+real /app/ page: 24/24 PASS (390 + 1440, light + dark: inline variant
+present, zero `.demo-badge` elements, title "Demo vault", switcher
+border transparent, no horizontal overflow, no page errors). Full audit
+`app-audit.mjs` re-run after the change: ALL PASS (6 pages x light/dark
+x 390/1440). Two check bugs found along the way, not product bugs: the
+first screenshot run failed because the local static server on 4173 was
+down (restarted), and the audit's activity wait used the landing page's
+`.dash-activity .activity-item` selector, which does not exist on app
+pages (the app feed uses `.feed-row`); both scripts are fixed. One
+tooling note: `tsc --noEmit` once failed on a stale generated
+`.next/types/validator.ts` after the preview route was deleted; a fresh
+`next build` regenerates it and typecheck passes clean afterwards. Also
+note: piping a command through `tail` masks its exit code, so a failing
+typecheck can look like it passed; check the exit code directly.
+
+Screenshots in `verification/`: header-live-{light,dark}-{390,1440}.

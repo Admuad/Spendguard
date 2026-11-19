@@ -3170,6 +3170,58 @@ summary:focus-visible,
 .app-head-tx {
   flex-basis: 100%;
 }
+
+/* Header variants (inline is the AppShell default since 19 Nov 2026).
+   Current stays the default everywhere; the preview picks one. */
+.app-head-compact {
+  align-items: center;
+  margin-bottom: 12px;
+}
+.app-head-compact .app-head-title h1 {
+  font-size: 22px;
+}
+.app-head-compact .app-head-sub {
+  display: none;
+}
+.app-head-minimal {
+  align-items: center;
+  margin-bottom: 12px;
+}
+.app-head-minimal .app-head-main {
+  display: none;
+}
+.app-head-minimal .app-head-actions {
+  flex: 1;
+  width: 100%;
+}
+/* Desktop: the pill sizes to its content. Mobile (media query below)
+   stretches it full width. */
+.app-head-minimal .app-select {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.app-head-minimal .app-select select {
+  width: auto;
+}
+.app-head-inline {
+  margin-bottom: 12px;
+}
+.app-head-inline .app-head-desc {
+  display: none;
+}
+.app-head-inline .app-select select {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  padding-left: 2px;
+}
+.app-head-inline .app-select select:hover {
+  border-color: var(--border);
+}
+.app-head-inline .app-select select:focus-visible {
+  border-color: transparent;
+  box-shadow: var(--ring);
+}
 .app-select select {
   appearance: none;
   min-height: 40px;
@@ -3933,6 +3985,13 @@ summary:focus-visible,
     min-width: 0;
   }
   .app-select select {
+    width: 100%;
+  }
+  /* Minimal keeps its full-width pill on mobile. */
+  .app-head-minimal .app-select {
+    flex: 1;
+  }
+  .app-head-minimal .app-select select {
     width: 100%;
   }
   .ov-top {

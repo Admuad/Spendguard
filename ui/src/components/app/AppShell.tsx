@@ -30,28 +30,31 @@ function TabIcon({ icon: Icon }: { icon: LucideIcon }) {
   return <Icon size={20} strokeWidth={1.8} aria-hidden="true" />;
 }
 
-function VaultHeader() {
+export type HeaderVariant = "current" | "compact" | "minimal" | "inline";
+
+export function VaultHeader({ variant = "current" }: { variant?: HeaderVariant }) {
   const app = useApp();
   const known = app.myVaults.some((v) => v.toLowerCase() === app.selected.toLowerCase());
   const extra = !app.isDemo && !known ? app.selected : null;
 
   return (
-    <div className="app-head">
+    <div className={`app-head${variant === "current" ? "" : ` app-head-${variant}`}`}>
       <div className="app-head-main">
         <div className="app-head-title">
           <h1>{app.isDemo ? "Demo vault" : "Your vault"}</h1>
-          {app.isDemo && <span className="demo-badge">Demo</span>}
         </div>
         <p className="app-head-sub">
           <a href={explorerAddressUrl(app.selected)} target="_blank" rel="noreferrer">
             {shortenAddress(app.selected)}
           </a>
-          <span aria-hidden="true"> · </span>
-          {app.isDemo
-            ? "The project's demo vault. Read-only unless you own it."
-            : app.isOwner
-              ? "You are the owner."
-              : "Viewing a vault you do not own."}
+          <span className="app-head-desc">
+            <span aria-hidden="true"> · </span>
+            {app.isDemo
+              ? "The project's demo vault. Read-only unless you own it."
+              : app.isOwner
+                ? "You are the owner."
+                : "Viewing a vault you do not own."}
+          </span>
         </p>
       </div>
       <div className="app-head-actions">
@@ -61,13 +64,25 @@ function VaultHeader() {
             value={app.selected}
             onChange={(event) => app.selectVault(event.target.value as `0x${string}`)}
           >
-            <option value={VAULT_ADDRESS}>Demo vault · {shortenAddress(VAULT_ADDRESS)}</option>
+            <option value={VAULT_ADDRESS}>
+              {variant === "minimal"
+                ? shortenAddress(VAULT_ADDRESS)
+                : `Demo vault · ${shortenAddress(VAULT_ADDRESS)}`}
+            </option>
             {app.myVaults.map((v, i) => (
               <option key={v} value={v}>
-                {app.myVaults.length > 1 ? `Your vault ${i + 1}` : "Your vault"} · {shortenAddress(v)}
+                {variant === "minimal"
+                  ? app.myVaults.length > 1
+                    ? `Your vault ${i + 1}`
+                    : "Your vault"
+                  : `${app.myVaults.length > 1 ? `Your vault ${i + 1}` : "Your vault"} · ${shortenAddress(v)}`}
               </option>
             ))}
-            {extra !== null && <option value={extra}>Vault · {shortenAddress(extra)}</option>}
+            {extra !== null && (
+              <option value={extra}>
+                {variant === "minimal" ? shortenAddress(extra) : `Vault · ${shortenAddress(extra)}`}
+              </option>
+            )}
           </select>
         </label>
         {app.isConnected && !app.wrongChain && (
@@ -140,7 +155,7 @@ function Banners() {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, headerVariant = "inline" }: { children: ReactNode; headerVariant?: HeaderVariant }) {
   const pathname = usePathname();
   const barRef = useRef<HTMLElement | null>(null);
   const [indicator, setIndicator] = useState({
@@ -183,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <div className="container app-wrap">
-        <VaultHeader />
+        <VaultHeader variant={headerVariant} />
         <Banners />
         <nav className="app-tabs" aria-label="App sections">
           {TABS.map((tab) => (
