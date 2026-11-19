@@ -956,3 +956,31 @@ the key. The floating key, the spinning dial ring, the "Nope, wrong
 key." bubble and the tip line stay.
 
 Re-ran `round8-verify.mjs`: 21/21 PASS.
+
+## Feedback round 10c: no wallet connect on the 404 (19 Nov 2026)
+
+Muhammed: no wallet connection on a non-existent page. The 404 renders
+its own Navbar, so a `hideConnect` prop was added to Navbar: it hides
+both the desktop Connect button and the mobile menu's Connect wallet
+button. The logo, links, hamburger and Appearance toggle stay. Verified
+in the round-11 suite (see below).
+
+## Feedback round 11: light-mode mobile menu was a dark slab (19 Nov 2026)
+
+Muhammed's screenshot: switching to light mode left the mobile menu a
+dark navy panel with the links unreadable. Cause: the light theme's
+`--mobile-menu-bg` was `rgba(0, 12, 40, 0.96)`, a dark navy leftover,
+while the links are dark text in light mode. Round 8 only verified the
+panel's alpha (0.96), never its colour, so the regression shipped.
+Fix: light `--mobile-menu-bg` is now `rgba(255, 255, 255, 0.97)`; dark
+stays `rgba(10, 10, 10, 0.97)`.
+
+Verify suite `~/workspace/tools/pw-verify/round11-verify.mjs`:
+7/7 PASS. It reproduces the exact bug (dark menu open, flip to light
+from the Appearance toggle inside the menu): the panel turns white and
+the links read at 19.8:1 contrast. Cold-start light menu also 19.8:1.
+Dark menu unchanged (dark panel, light links). 404 checks included: no
+Connect button in the navbar and none in the mobile menu.
+
+Screenshots in `verification/`: round11-390-menu-light-after-switch,
+round11-390-menu-light, round11-390-404-light-menu.

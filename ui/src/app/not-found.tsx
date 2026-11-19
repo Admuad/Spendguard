@@ -20,7 +20,7 @@ export default function NotFound() {
 
   return (
     <section className="not-found">
-      <Navbar />
+      <Navbar hideConnect />
       <div className="nf-wrap">
         <p className="nf-eyebrow">Error 404 · Lost key</p>
         <div className="nf-scene">

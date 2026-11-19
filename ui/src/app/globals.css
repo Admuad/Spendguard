@@ -40,7 +40,11 @@
   --warning-bg: #fffbeb;
   --nav-text: #ffffff;
   --nav-text-dim: rgba(255, 255, 255, 0.72);
-  --mobile-menu-bg: rgba(0, 12, 40, 0.96);
+  /* Light panel for the light menu: the links are dark text, so a dark
+     panel makes them invisible (19 Nov: switching to light mode left the
+     menu a dark navy slab with unreadable links). Dark theme overrides
+     this below with its own near-black. */
+  --mobile-menu-bg: rgba(255, 255, 255, 0.97);
   --code-bg: #f5f6f8;
   --tabbar-bg: rgba(255, 255, 255, 0.72);
   --tabbar-border: rgba(10, 10, 35, 0.08);

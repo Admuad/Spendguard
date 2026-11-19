@@ -236,7 +236,7 @@ export function ConnectButton({
   );
 }
 
-export function Navbar({ connectVariant = "icon-text" }: { connectVariant?: ConnectVariant } = {}) {
+export function Navbar({ connectVariant = "icon-text", hideConnect = false }: { connectVariant?: ConnectVariant; hideConnect?: boolean } = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isConnected } = useAccount();
   const pathname = usePathname();
@@ -301,7 +301,7 @@ export function Navbar({ connectVariant = "icon-text" }: { connectVariant?: Conn
           <span className="nav-theme">
             <ThemeToggle />
           </span>
-          <ConnectButton variant={connectVariant} />
+          {!hideConnect && <ConnectButton variant={connectVariant} />}
           <button
             type="button"
             className="hamburger"
@@ -331,7 +331,7 @@ export function Navbar({ connectVariant = "icon-text" }: { connectVariant?: Conn
               <span>Appearance</span>
               <ThemeToggle />
             </div>
-            {!isConnected && <MobileConnect />}
+            {!hideConnect && !isConnected && <MobileConnect />}
           </div>
         </>
       )}
