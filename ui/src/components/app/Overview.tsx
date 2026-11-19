@@ -34,7 +34,7 @@ export function Overview() {
   const atRisk = balance === null ? null : capRoom < balance ? capRoom : balance;
   const protectedAmt = balance === null || atRisk === null ? null : balance - atRisk;
   // The bar is the vault balance, nothing else: blue (what keys can still
-  // take) plus green (only the owner can move). It always adds up to what the
+  // take) plus green (what keys cannot take). It always adds up to what the
   // vault holds right now. What keys already paid out is history, not part
   // of this balance: it belongs to past funding rounds, and a sweep plus a
   // fresh deposit would otherwise mix old payouts into the new balance.
@@ -141,7 +141,7 @@ export function Overview() {
             aria-label={
               balance === null || atRisk === null
                 ? "Loading"
-                : `Vault holds ${formatTusd8(balance)} tUSD8. Keys can still take at most ${formatTusd8(atRisk)}, and ${formatTusd8(protectedAmt ?? 0n)} only the owner can move. Keys have paid out ${formatTusd8(paidOut)} so far`
+                : `Vault holds ${formatTusd8(balance)} tUSD8. Keys can still take at most ${formatTusd8(atRisk)}, and keys cannot take ${formatTusd8(protectedAmt ?? 0n)}. Keys have paid out ${formatTusd8(paidOut)} so far`
             }
           >
             <span className="split-risk" style={{ width: `${riskPct}%` }} />
@@ -157,7 +157,7 @@ export function Overview() {
             <div>
               <dt>
                 <i className="dot dot-safe" />
-                Only the owner can move
+                Keys cannot take
               </dt>
               <dd>{protectedAmt === null ? "…" : formatTusd8(protectedAmt)}</dd>
             </div>
