@@ -41,6 +41,8 @@
   --nav-text-dim: rgba(255, 255, 255, 0.72);
   --mobile-menu-bg: rgba(0, 12, 40, 0.96);
   --code-bg: #f5f6f8;
+  --tabbar-bg: rgba(255, 255, 255, 0.72);
+  --tabbar-border: rgba(10, 10, 35, 0.08);
 }
 
 [data-theme="dark"] {
@@ -72,6 +74,8 @@
   --warning-bg: rgba(217, 119, 6, 0.12);
   --mobile-menu-bg: rgba(10, 10, 10, 0.97);
   --code-bg: rgba(255, 255, 255, 0.06);
+  --tabbar-bg: rgba(10, 10, 10, 0.55);
+  --tabbar-border: rgba(255, 255, 255, 0.1);
 }
 
 /* The dashboard card sits on the blue hero gradient, so a translucent
@@ -3697,10 +3701,33 @@ summary:focus-visible,
     right: 0;
     bottom: 0;
     z-index: 40;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    /* Liquid glass: translucent tint + blur so page content behind the
+       bar reads as frosted glass, never as legible text bleeding through. */
+    background: var(--tabbar-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--tabbar-border);
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-    box-shadow: 0 -8px 24px rgba(3, 20, 80, 0.08);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  }
+  /* Sliding glass pill: the active tab's highlight glides between tabs
+     instead of snapping. Positioned by AppShell from the active link. */
+  .app-tabbar-indicator {
+    position: absolute;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--tabbar-border);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 16px rgba(3, 70, 255, 0.12);
+    transition: left 0.45s cubic-bezier(0.22, 1, 0.36, 1), top 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      width 0.45s cubic-bezier(0.22, 1, 0.36, 1), height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-tabbar-indicator {
+      transition: none;
+    }
   }
   .app-tabbar .app-tab {
     flex-direction: column;
@@ -3710,9 +3737,15 @@ summary:focus-visible,
     border-radius: 14px;
     font-size: 11.5px;
     min-height: 52px;
+    position: relative;
+    z-index: 1;
   }
   .app-tabbar .app-tab[aria-current="page"] {
-    background: var(--accent-soft);
+    /* The global .app-tab[aria-current] rule paints a solid accent pill
+       for the desktop nav; here the sliding glass indicator provides the
+       highlight, so the tab itself must stay transparent or the label
+       goes blue-on-blue and the pill hides behind it. */
+    background: transparent;
     color: var(--accent);
   }
 }
@@ -3739,12 +3772,26 @@ summary:focus-visible,
   .card {
     padding: 20px;
   }
+  /* Mobile: the three vault controls share one compact row, icon above
+     label, equal widths whether two or three are shown (Grant only
+     appears for the connected owner). Deposit stays minimal instead of
+     dominating the card, which matters on the read-only demo vault. */
   .ov-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
   }
-  .ov-actions .btn:first-child {
-    grid-column: 1 / -1;
+  .ov-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+    height: 56px;
+    padding: 6px 4px;
+    font-size: 12.5px;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
   }
   .ov-kpis {
     grid-template-columns: 1fr 1fr;

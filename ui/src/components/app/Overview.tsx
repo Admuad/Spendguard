@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ArrowDownToLine, ArrowUpFromLine, KeyRound } from "lucide-react";
 import { formatTusd8, shortenAddress } from "@/lib/format";
 import { timeLeft } from "@/lib/blockTimes";
 import { getKeyLabel, useKeyLabels } from "@/lib/keyLabels";
@@ -78,14 +79,17 @@ export function Overview() {
           <p className="card-note">Held by the vault contract. Only the owner can move it out.</p>
           <div className="ov-actions">
             <button type="button" className="btn btn-primary" onClick={() => setDepositOpen(true)}>
+              <ArrowDownToLine size={18} strokeWidth={1.8} aria-hidden="true" />
               Deposit
             </button>
             {app.isConnected && app.isOwner && (
               <Link href="/app/keys/#grant" className="btn btn-outline">
+                <KeyRound size={18} strokeWidth={1.8} aria-hidden="true" />
                 Grant a key
               </Link>
             )}
             <Link href="/app/settings/" className="btn btn-outline">
+              <ArrowUpFromLine size={18} strokeWidth={1.8} aria-hidden="true" />
               Sweep or pause
             </Link>
           </div>

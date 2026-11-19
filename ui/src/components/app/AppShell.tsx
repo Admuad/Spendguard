@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Activity, CreditCard, KeyRound, LayoutDashboard, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -141,6 +142,44 @@ function Banners() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const barRef = useRef<HTMLElement | null>(null);
+  const [indicator, setIndicator] = useState({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+    visible: false,
+  });
+
+  // The sliding glass pill tracks the active tab: measure it from the
+  // rendered link so the pill glides on every route change and resize.
+  useEffect(() => {
+    const measure = () => {
+      const bar = barRef.current;
+      if (!bar) return;
+      const active = bar.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!active) {
+        setIndicator((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+        return;
+      }
+      setIndicator({
+        left: active.offsetLeft,
+        top: active.offsetTop,
+        width: active.offsetWidth,
+        height: active.offsetHeight,
+        visible: true,
+      });
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    if (document.fonts) void document.fonts.ready.then(measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
+  }, [pathname]);
+
   return (
     <div className="app-shell">
       <div className="container app-wrap">
@@ -161,7 +200,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="app-page">{children}</div>
       </div>
-      <nav className="app-tabbar" aria-label="App sections">
+      <nav className="app-tabbar" aria-label="App sections" ref={barRef}>
+        <span
+          className="app-tabbar-indicator"
+          aria-hidden="true"
+          style={{
+            left: indicator.left,
+            top: indicator.top,
+            width: indicator.width,
+            height: indicator.height,
+            opacity: indicator.visible ? 1 : 0,
+          }}
+        />
         {TABS.map((tab) => (
           <Link
             key={tab.href}
