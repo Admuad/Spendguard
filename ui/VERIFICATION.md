@@ -1022,3 +1022,47 @@ note: piping a command through `tail` masks its exit code, so a failing
 typecheck can look like it passed; check the exit code directly.
 
 Screenshots in `verification/`: header-live-{light,dark}-{390,1440}.
+
+## Feedback round 13: Keys layout stacked, wallet waits for unlock, Vercel prepped (19 Nov 2026)
+
+Muhammed: (1) on a fresh vault the Keys page showed two cards side by side,
+the grant form about five times longer than the sessions list, with a big
+blank area under the list. Measured live at 1440: grant form 1,297px vs an
+empty sessions list 282px (4.6x); on the demo vault with 2 sessions it was
+1,297px vs 877px. The Settings page has the same two-column pattern but its
+cards are close (owner 395px vs 482px), so it was left alone. (2) With a
+locked wallet, tapping Connect did nothing until he manually unlocked,
+refreshed, and tapped again. (3) Prep the Vercel move.
+
+Fixes. Keys is now a single column at every width: sessions on top, grant
+form below capped at 720px, and the "+ Grant a key" jump button (previously
+mobile-only) now shows on desktop too, so the form stays one tap away when
+the list is long. The tablet media-query rules that restated the stacked
+layout were removed as redundant. Wallet connect now goes through a shared
+`useWalletConnect` hook (`ui/src/lib/walletConnect.ts`), used by all five
+connect buttons (navbar, mobile menu, ConnectPrompt, mobile shared prompt,
+mobile action bar): if no provider is present it waits instead of failing,
+polling for `window.ethereum` and listening for `ethereum#initialized`, and
+connects automatically the moment the wallet appears, no refresh needed.
+After 60s with no provider it shows the existing friendly "no wallet
+found" message. Still no WalletConnect and no API key. Vercel needs no
+config change: `next.config.ts` already serves the default server build
+with no base path when `DEPLOY_TARGET` is not `github-pages`; the exact
+project settings (Root Directory `ui`, `NEXT_PUBLIC_SITE_URL`, no base
+path) are now documented in `ui/README.md`. The demo video stays hosted
+on GitHub Pages, so it works from either host.
+
+Verify suite `~/workspace/tools/pw-verify/round13-verify.mjs`: 14/15 PASS
+on the first run; the one failure was a probe bug (the 390 check ran
+disconnected, where the jump button correctly does not render), re-checked
+owner-connected at 390 in `keys390-owner.mjs`: jump button visible, grant
+present, no overflow. Keys 1440 owner-connected: single column, grant
+below the list, form capped at 720px, jump button visible, no overflow, no
+page errors. Wallet wait: no provider, click shows "No wallet detected
+yet" + "Waiting for wallet…", injecting the provider mid-session
+auto-connects with no refresh. `tsc --noEmit` exit 0; Pages build exit 0;
+plain `next build` (the Vercel build) exit 0.
+
+Screenshots in `verification/`: round13-keys-1440, round13-keys-390,
+round13-keys-390-owner, round13-wallet-wait-1440, twocard-settings-anon-1440,
+twocard-keys-owner-1440, twocard-keys-fresh-1440.

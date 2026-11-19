@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useAccount, useConnect, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useAccount, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useWalletConnect } from "@/lib/walletConnect";
 import type { Address } from "viem";
 import { ArrowUpRight, KeyRound, ShieldCheck } from "lucide-react";
 import {
@@ -166,7 +166,7 @@ export function TxStatus({
 }
 
 export function ConnectPrompt({ action }: { action: string }) {
-  const { connect, isPending, error, reset } = useConnect();
+  const { connectWallet, isPending, waiting, error } = useWalletConnect();
   return (
     <div className="empty-state connect-prompt">
       <p style={{ margin: "0 0 14px" }}>
@@ -176,13 +176,16 @@ export function ConnectPrompt({ action }: { action: string }) {
         type="button"
         className="btn btn-primary btn-sm"
         disabled={isPending}
-        onClick={() => {
-          reset();
-          connect({ connector: injected() });
-        }}
+        onClick={connectWallet}
       >
-        {isPending ? "Connecting…" : "Connect wallet"}
+        {waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect wallet"}
       </button>
+      {waiting && (
+        <p className="error-text" role="status" style={{ color: "var(--text-2)" }}>
+          No wallet detected yet. Open your wallet extension and unlock it.
+          This page connects as soon as the wallet appears, no refresh needed.
+        </p>
+      )}
       {error && (
         <p className="error-text" role="alert">
           {plainConnectErrorMessage(error)}
@@ -1690,7 +1693,7 @@ const MOBILE_PANELS: Array<{ id: MobilePanel; label: string }> = [
 /** One connect prompt for the whole vault section on mobile, replacing the
  * per-panel prompts (hidden by CSS below 860px). */
 function MobileConnectPrompt() {
-  const { connect, isPending, error, reset } = useConnect();
+  const { connectWallet, isPending, waiting, error } = useWalletConnect();
   return (
     <div className="mobile-shared-prompt">
       <p>
@@ -1701,13 +1704,16 @@ function MobileConnectPrompt() {
         type="button"
         className="btn btn-primary btn-block"
         disabled={isPending}
-        onClick={() => {
-          reset();
-          connect({ connector: injected() });
-        }}
+        onClick={connectWallet}
       >
-        {isPending ? "Connecting…" : "Connect wallet"}
+        {waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect wallet"}
       </button>
+      {waiting && (
+        <p className="error-text" role="status" style={{ color: "var(--text-2)" }}>
+          No wallet detected yet. Open your wallet extension and unlock it.
+          This page connects as soon as the wallet appears, no refresh needed.
+        </p>
+      )}
       {error && (
         <p className="error-text" role="alert">
           {plainConnectErrorMessage(error)}
@@ -1725,7 +1731,7 @@ function MobileActionBar({
   onNavigate: (panel: MobilePanel) => void;
 }) {
   const { isConnected, chainId } = useAccount();
-  const { connect, isPending, error: connectError, reset: resetConnect } = useConnect();
+  const { connectWallet, isPending, waiting, error: connectError } = useWalletConnect();
   const {
     switchChain,
     isPending: isSwitching,
@@ -1741,13 +1747,16 @@ function MobileActionBar({
           type="button"
           className="btn btn-primary btn-block"
           disabled={isPending}
-          onClick={() => {
-            resetConnect();
-            connect({ connector: injected() });
-          }}
+          onClick={connectWallet}
         >
-          {isPending ? "Connecting…" : "Connect wallet"}
+          {waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect wallet"}
         </button>
+        {waiting && (
+          <p className="error-text" role="status" style={{ color: "var(--text-2)" }}>
+            No wallet detected yet. Open your wallet extension and unlock it.
+            This page connects as soon as the wallet appears, no refresh needed.
+          </p>
+        )}
         {connectError && (
           <p className="error-text" role="alert">
             {plainConnectErrorMessage(connectError)}

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useAccount, useDisconnect, useSwitchChain } from "wagmi";
 import { ThemeToggle } from "@/lib/theme";
+import { useWalletConnect } from "@/lib/walletConnect";
 import { APP_URL, BASE_PATH } from "@/lib/site";
 import { LogoLockup } from "./Logo";
 import { Menu, Wallet, X } from "lucide-react";
@@ -19,8 +19,10 @@ const SECTION_LINKS = [
 ];
 
 /** Small popover under a navbar button: a failed connect or switch must say
- * why, instead of failing silently. Dismissed by retrying or by the ×. */
-function NavErrorPopover({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+ * why, instead of failing silently. Dismissed by retrying or by the ×.
+ * `tone="info"` is the waiting state (wallet not injected yet), not an
+ * error, so it uses the accent border instead of the danger one. */
+function NavErrorPopover({ message, onDismiss, tone = "error" }: { message: string; onDismiss: () => void; tone?: "error" | "info" }) {
   return (
     <div
       role="alert"
@@ -30,7 +32,7 @@ function NavErrorPopover({ message, onDismiss }: { message: string; onDismiss: (
         top: "calc(100% + 8px)",
         zIndex: 60,
         background: "var(--surface)",
-        border: "1px solid var(--danger)",
+        border: `1px solid var(--${tone === "info" ? "accent" : "danger"})`,
         borderRadius: 14,
         boxShadow: "var(--shadow-pop)",
         padding: "12px 14px",
@@ -79,7 +81,7 @@ export function ConnectButton({
   variant?: ConnectVariant;
 }) {
   const { address, isConnected, chainId } = useAccount();
-  const { connect, isPending, error: connectError, reset: resetConnect } = useConnect();
+  const { connectWallet, isPending, waiting, error: connectError, resetAll } = useWalletConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching, error: switchError, reset: resetSwitch } = useSwitchChain();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -110,28 +112,32 @@ export function ConnectButton({
           className={`btn btn-primary nav-cta ${variantClass} ${className}`}
           aria-label={variant === "icon" ? "Connect wallet" : undefined}
           disabled={isPending}
-          onClick={() => {
-            resetConnect();
-            connect({ connector: injected() });
-          }}
+          onClick={connectWallet}
         >
           {variant === "icon" ? (
             <Wallet size={20} aria-hidden="true" />
           ) : variant === "icon-text" ? (
             <>
               <Wallet size={18} aria-hidden="true" />
-              {isPending ? "Connecting…" : "Connect"}
+              {waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect"}
             </>
           ) : variant === "compact" ? (
-            isPending ? "Connecting…" : "Connect"
+            waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect"
           ) : (
-            isPending ? "Connecting…" : "Connect wallet"
+            waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect wallet"
           )}
         </button>
+        {waiting && (
+          <NavErrorPopover
+            tone="info"
+            message="No wallet detected yet. Open your wallet extension and unlock it. This page connects as soon as the wallet appears, no refresh needed."
+            onDismiss={resetAll}
+          />
+        )}
         {connectError && (
           <NavErrorPopover
             message={plainConnectErrorMessage(connectError)}
-            onDismiss={resetConnect}
+            onDismiss={resetAll}
           />
         )}
       </div>
@@ -340,20 +346,23 @@ export function Navbar({ connectVariant = "icon-text", hideConnect = false }: { 
 }
 
 function MobileConnect() {
-  const { connect, isPending, error, reset } = useConnect();
+  const { connectWallet, isPending, waiting, error, resetAll } = useWalletConnect();
   return (
     <div>
       <button
         type="button"
         className="btn btn-primary btn-block"
         disabled={isPending}
-        onClick={() => {
-          reset();
-          connect({ connector: injected() });
-        }}
+        onClick={connectWallet}
       >
-        {isPending ? "Connecting…" : "Connect wallet"}
+        {waiting ? "Waiting for wallet…" : isPending ? "Connecting…" : "Connect wallet"}
       </button>
+      {waiting && (
+        <p className="error-text" role="status" style={{ color: "var(--text-2)" }}>
+          No wallet detected yet. Open your wallet extension and unlock it.
+          This page connects as soon as the wallet appears, no refresh needed.
+        </p>
+      )}
       {error && (
         <p className="error-text" role="alert">
           {plainConnectErrorMessage(error)}

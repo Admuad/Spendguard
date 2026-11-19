@@ -3774,18 +3774,23 @@ summary:focus-visible,
 }
 
 /* Keys / Pay / Settings layouts */
+/* Keys: single column at every width. The old two-column grid put the long
+ * grant form beside the sessions list, so a fresh vault (empty list) left
+ * a huge blank area under Sessions while the form towered beside it. The
+ * "+ Grant a key" jump button (below) is the way down to the form when the
+ * list is long; the tablet rule below now only restates this. */
 .keys-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-columns: 1fr;
   gap: 16px;
-  align-items: start;
 }
 .keys-list {
   grid-column: 1;
-  grid-row: 1;
 }
 .keys-jump {
-  display: none;
+  display: block;
+  grid-column: 1;
+  justify-self: end;
 }
 /* Inside the app, keys show a short address; the full one is on the explorer link. */
 .app-shell .session-key-full {
@@ -3795,10 +3800,11 @@ summary:focus-visible,
   display: inline;
 }
 .keys-grant {
-  grid-column: 2;
-  grid-row: 1;
-  position: sticky;
-  top: 16px;
+  grid-column: 1;
+  position: static;
+  scroll-margin-top: 16px;
+  /* A full-width form at desktop widths is unreadable; keep it form-wide. */
+  max-width: 720px;
 }
 .keys-layout .panel-wide {
   grid-column: auto;
@@ -3882,25 +3888,6 @@ summary:focus-visible,
 
 /* Tablet */
 @media (max-width: 1000px) {
-  .keys-layout {
-    grid-template-columns: 1fr;
-  }
-  .keys-jump {
-    display: block;
-    grid-row: 1;
-    grid-column: 1;
-    justify-self: end;
-  }
-  .keys-list {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .keys-grant {
-    grid-column: 1;
-    grid-row: 3;
-    position: static;
-    scroll-margin-top: 16px;
-  }
   .settings-layout {
     grid-template-columns: 1fr;
   }

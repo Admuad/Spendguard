@@ -87,6 +87,26 @@ icon/manifest links on the same prefix. Local dev and `next start` are
 unaffected. Link previews, favicons, manifest, robots, and sitemap are all
 in `public/` and verified live (see VERIFICATION.md).
 
+## Deploy (Vercel)
+
+The same repo deploys to Vercel as a standard Next.js app, no config change
+needed: without `DEPLOY_TARGET`, `next.config.ts` is the default server
+build with no base path. In the Vercel dashboard, import `Admuad/Spendguard`
+and set:
+
+- Root Directory: `ui`
+- Framework Preset: Next.js (auto-detected)
+- Environment variables:
+  - `NEXT_PUBLIC_SITE_URL` = `https://<project>.vercel.app` (canonical links
+    and previews; without it they default to the GitHub Pages URL)
+  - leave `NEXT_PUBLIC_BASE_PATH` unset (empty = root deployment)
+
+The demo video stays hosted on GitHub Pages
+(`https://admuad.github.io/Spendguard/spendguard-demo-v5-web.mp4`), so the
+Watch Demo button works from either host. Keep the Pages site live as a
+fallback; point the submission and the repo homepage at the Vercel URL once
+it is live.
+
 ## Layout
 
 ```
