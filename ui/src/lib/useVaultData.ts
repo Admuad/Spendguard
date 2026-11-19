@@ -11,6 +11,7 @@ import {
   readClient,
   spendGuardAbi,
 } from "./config";
+import { cachedLogToLog, readVaultLogCache, writeVaultLogCache } from "./vaultCache";
 
 /** One decoded vault event, newest first in the activity list. */
 export type VaultActivity =
@@ -94,21 +95,37 @@ export type VaultData = {
 
 const POLL_MS = 20_000;
 
-/** Fetch logs in ≤1,000-block chunks (Aevum's eth_getLogs limit). */
+/** Chunks are fetched concurrently so a cold scan is seconds, not minutes. */
+const LOG_CONCURRENCY = 6;
+
+/** Fetch logs in ≤1,000-block chunks (Aevum's eth_getLogs limit), fetching
+ * chunks concurrently. A cold scan over ~80k blocks is ~80 sequential
+ * round trips one-by-one; in parallel it is a handful of rounds. */
 async function getLogsChunked(from: bigint, to: bigint, address: `0x${string}`): Promise<Log[]> {
-  const logs: Log[] = [];
+  const ranges: Array<{ from: bigint; to: bigint }> = [];
   let cursor = from;
   while (cursor <= to) {
     const end = cursor + MAX_LOG_RANGE - 1n > to ? to : cursor + MAX_LOG_RANGE - 1n;
-    const chunk = await readClient.getLogs({
-      address,
-      fromBlock: cursor,
-      toBlock: end,
-    });
-    logs.push(...chunk);
+    ranges.push({ from: cursor, to: end });
     cursor = end + 1n;
   }
-  return logs;
+  const results: Log[][] = new Array(ranges.length);
+  let next = 0;
+  async function worker() {
+    while (next < ranges.length) {
+      const i = next++;
+      const r = ranges[i];
+      results[i] = await readClient.getLogs({
+        address,
+        fromBlock: r.from,
+        toBlock: r.to,
+      });
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(LOG_CONCURRENCY, ranges.length) }, () => worker()),
+  );
+  return results.flat();
 }
 
 function decodeActivity(log: Log): VaultActivity | null {
@@ -195,8 +212,11 @@ function decodeWithAbi(log: Log): VaultActivity | null {
 /**
  * Live vault state, read over the public RPC with no wallet required.
  * Polls over HTTPS (Aevum has no WebSocket RPC) and chunks log scans to
- * ≤1,000 blocks per call. After the first full scan, only new blocks are
- * fetched on each poll.
+ * ≤1,000 blocks per call, fetched concurrently. After the first full scan,
+ * only new blocks are fetched on each poll, and the scanned logs are kept
+ * in a shared local cache (see vaultCache) so the activity page, the
+ * home-page dashboard and the overview all render instantly on later
+ * visits instead of rescanning from the deploy block every time.
  */
 export function useVaultData(
   vaultAddress: `0x${string}` = VAULT_ADDRESS,
@@ -216,6 +236,7 @@ export function useVaultData(
   const runRef = useRef(0);
   const scannedThroughRef = useRef<bigint | null>(null);
   const activityRef = useRef<VaultActivity[]>([]);
+  const logsRef = useRef<Log[]>([]);
   const keysRef = useRef<Set<string>>(new Set());
   const refreshKeyRef = useRef(0);
 
@@ -232,6 +253,7 @@ export function useVaultData(
       vaultRef.current = vaultAddress;
       scannedThroughRef.current = null;
       activityRef.current = [];
+      logsRef.current = [];
       keysRef.current = new Set();
       setBalance(null);
       setPaused(null);
@@ -264,6 +286,30 @@ export function useVaultData(
       setPaused(isPaused);
       setOwner(vaultOwner);
 
+      // First load for this vault: hydrate from the shared log cache so the
+      // activity feed and the session list render instantly, then only
+      // blocks after the saved tip are fetched below.
+      if (scannedThroughRef.current === null) {
+        const cached = readVaultLogCache(vaultAddress);
+        if (cached) {
+          const cachedLogs = cached.logs.map((c) => cachedLogToLog(c, vaultAddress));
+          logsRef.current = cachedLogs;
+          const items: VaultActivity[] = [];
+          for (const log of cachedLogs) {
+            const item = decodeActivity(log);
+            if (item) {
+              items.push(item);
+              if (item.kind === "grant") keysRef.current.add(item.sessionKey.toLowerCase());
+            }
+          }
+          if (items.length > 0) {
+            activityRef.current = [...items.reverse(), ...activityRef.current];
+            setActivity(activityRef.current.slice(0, 50));
+          }
+          scannedThroughRef.current = BigInt(cached.scannedThrough);
+        }
+      }
+
       const from = scannedThroughRef.current === null
         ? fromBlock
         : scannedThroughRef.current + 1n;
@@ -271,6 +317,8 @@ export function useVaultData(
         const logs = await getLogsChunked(from, latest, vaultAddress);
         if (stale()) return;
         scannedThroughRef.current = latest;
+        logsRef.current = [...logsRef.current, ...logs];
+        writeVaultLogCache(vaultAddress, latest, logsRef.current);
         const fresh: VaultActivity[] = [];
         for (const log of logs) {
           const item = decodeActivity(log);

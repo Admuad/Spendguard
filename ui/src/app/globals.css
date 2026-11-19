@@ -44,31 +44,40 @@
 }
 
 [data-theme="dark"] {
-  --bg: #070b14;
-  --bg-soft: #0b1120;
-  --surface: #0e1526;
-  --surface-2: #131c31;
-  --surface-3: #1a2540;
-  --text: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --border: #1e2a44;
-  --border-strong: #2b3a5c;
-  --pill-bg: #131c31;
-  --accent-soft: rgba(35, 132, 255, 0.14);
+  /* Premium neutral black: true black page, cards as translucent white
+     lifts with no blue tint anywhere. Brand blue lives only in the
+     accent itself, never in the base surfaces. */
+  --bg: #0a0a0a;
+  --bg-soft: #111111;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --surface-3: rgba(255, 255, 255, 0.12);
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --pill-bg: rgba(255, 255, 255, 0.07);
+  --accent-soft: rgba(3, 70, 255, 0.16);
   --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-dash: 0 30px 80px rgba(0, 0, 0, 0.55), 0 8px 24px rgba(0, 0, 0, 0.4);
   --shadow-pop: 0 18px 50px rgba(0, 0, 0, 0.5);
-  --ring: 0 0 0 3px rgba(35, 132, 255, 0.3);
-  --input-bg: #0b1120;
+  --ring: 0 0 0 3px rgba(3, 70, 255, 0.35);
+  --input-bg: rgba(255, 255, 255, 0.04);
   --success: #4ade80;
   --success-bg: rgba(22, 163, 74, 0.12);
   --danger: #f87171;
   --danger-bg: rgba(220, 38, 38, 0.12);
   --warning: #fbbf24;
   --warning-bg: rgba(217, 119, 6, 0.12);
-  --mobile-menu-bg: rgba(4, 8, 18, 0.97);
-  --code-bg: #131c31;
+  --mobile-menu-bg: rgba(10, 10, 10, 0.97);
+  --code-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* The dashboard card sits on the blue hero gradient, so a translucent
+   surface would let the blue bleed through: solid neutral here only. */
+[data-theme="dark"] .dash-card {
+  background: #161616;
 }
 
 * {
@@ -780,6 +789,13 @@ summary:focus-visible,
 }
 
 /* Stat strip */
+/* Gap between the hero dashboard card and the live strip below it: the
+   hero carries no bottom padding, so this margin is the whole junction.
+   It reads cramped at 40px, so the strip gets real breathing room. */
+.stat-strip-wrap {
+  margin-top: 80px;
+}
+
 .stat-strip {
   margin: -8px auto 0;
   max-width: 980px;
@@ -2050,6 +2066,9 @@ summary:focus-visible,
   }
   .kpi-foot {
     font-size: 12px;
+  }
+  .stat-strip-wrap {
+    margin-top: 64px;
   }
   .stat-strip {
     grid-template-columns: 1fr 1fr;

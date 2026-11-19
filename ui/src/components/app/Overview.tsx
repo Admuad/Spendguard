@@ -80,9 +80,11 @@ export function Overview() {
             <button type="button" className="btn btn-primary" onClick={() => setDepositOpen(true)}>
               Deposit
             </button>
-            <Link href="/app/keys/#grant" className="btn btn-outline">
-              Grant a key
-            </Link>
+            {app.isConnected && app.isOwner && (
+              <Link href="/app/keys/#grant" className="btn btn-outline">
+                Grant a key
+              </Link>
+            )}
             <Link href="/app/settings/" className="btn btn-outline">
               Sweep or pause
             </Link>

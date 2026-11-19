@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 /** Scroll-reveal wrapper: fades + slides content up once it enters view. */
 export function Reveal({
@@ -98,9 +99,5 @@ export function CountUp({
 
 /** Small chevron icon used by the FAQ accordion. */
 export function Chevron() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
+  return <ChevronDown size={18} aria-hidden="true" />;
 }

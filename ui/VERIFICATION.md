@@ -615,3 +615,45 @@ in dark mode, still solid with the dimming backdrop. Screenshots in
 `verification/`: navfix-app-390-top, navfix-app-390-menu-light/dark,
 navfix-app-360-top, navfix-landing-390-menu-light. Mobile
 Claude-checklist suite green.
+
+## Feedback round 2 (19 Nov 2026, midday WAT)
+
+Muhammed reviewed the restructured live site on his phone and sent six
+items. All six are implemented, typechecked, built, verified with
+`tools/pw-verify/round2-verify.mjs`, and pushed.
+
+- Landing spacing: the hero-to-strip gap was an untuned 40px (inline
+  `marginTop: 40` on the StatStrip wrapper, hero bottom padding 0).
+  Now a `.stat-strip-wrap` class: 80px desktop, 64px mobile (measured
+  56px at 390px after the strip's own -8px top margin).
+- Dark theme: the old blue-black (`#070b14` bg, navy surfaces) is gone.
+  Now premium neutral black: bg `#0a0a0a`, cards translucent white
+  (`rgba(255,255,255,0.05/0.08/0.12)`), neutral borders/text, brand
+  blue only in the accent. The dashboard card stays solid `#161616`
+  in dark mode so no blue bleeds through from the hero gradient.
+  Verified: body bg `rgb(10,10,10)`, card blue channel delta 0.
+- Green Active badge removed from the vault header. Session status
+  badges on key cards remain (per-key state).
+- Read-only banner is text-only: its Connect button is gone (navbar
+  already has one; the Settings owner panel keeps its own).
+- Icons: every hand-drawn inline SVG replaced with Lucide
+  (`lucide-react` 1.76.0). Tabs: LayoutDashboard / KeyRound /
+  CreditCard / Activity / Settings. Capabilities: KeyRound /
+  ShieldCheck / Ban / FileText. Menu/X, Sun/Moon, Play, ChevronDown,
+  ArrowUpRight elsewhere. Only the keyhole brand logo stays
+  hand-drawn. Verified: all 5 visible tab links render an SVG.
+- Keys page grant gating: the grant section, the "+ Grant a key"
+  button and the overview Grant link render only when the connected
+  wallet owns the vault. A read-only demo-vault visitor sees none of
+  them. Verified both ways (hidden disconnected, shown as owner).
+- Activity speed: one shared localStorage log cache
+  (`lib/vaultCache.ts`, per vault, raw logs + scanned tip) feeding the
+  home dashboard, overview and activity page, plus 6-way concurrent
+  chunk fetching for cold scans. Cold keys sessions: 3.8s (the old
+  sequential scan timed out past 90s). Warm keys 0.9s, warm activity
+  1.9s. Live session state is always re-read from the chain, so the
+  cache can never show a stale spent amount or balance.
+
+Screenshots in `verification/`: round2-390-landing-gap-light,
+round2-390-landing-dark, round2-390-keys-readonly-light,
+round2-390-settings-dark, round2-1440-landing-light.

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import type { VaultData } from "@/lib/useVaultData";
 import { CountUp, Chevron, Reveal } from "./bits";
+import { Ban, FileText, KeyRound, Play, ShieldCheck } from "lucide-react";
 import { LogoLockup } from "./Logo";
 import { formatTusd8, shortenAddress } from "@/lib/format";
 import { APP_URL, BASE_PATH } from "@/lib/site";
@@ -25,7 +26,7 @@ import {
 // ---------------------------------------------------------------------------
 export function StatStrip({ vault }: { vault: VaultData }) {
   return (
-    <div className="container" style={{ marginTop: 40 }}>
+    <div className="container stat-strip-wrap">
       <div className="stat-strip">
         <div className="stat-strip-item">
           <div className="stat-strip-value">
@@ -120,42 +121,22 @@ const CAPABILITIES = [
   {
     title: "Scoped session keys",
     body: "Each key carries its own allowlist, per-payment limit, total cap, and expiry. A key is good for exactly one job. Nothing more.",
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="8" cy="15" r="4" />
-        <path d="m10.9 12.1 8.6-8.6M18 5l2 2M15 8l2 2" />
-      </svg>
-    ),
+    icon: <KeyRound size={24} aria-hidden="true" />,
   },
   {
     title: "Caps that cannot be bypassed",
     body: "Every check runs on-chain before the transfer. No frontend, script, or prompt can talk the contract out of it.",
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z" />
-        <path d="m9 12 2 2 4-4" />
-      </svg>
-    ),
+    icon: <ShieldCheck size={24} aria-hidden="true" />,
   },
   {
     title: "Instant revocation",
     body: "One owner transaction and the key is dead forever. A fresh grant starts at zero spent. A revoked key never comes back.",
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M5.5 5.5l13 13" />
-      </svg>
-    ),
+    icon: <Ban size={24} aria-hidden="true" />,
   },
   {
     title: "Full audit trail",
     body: "Every deposit, grant, payment, revoke, and sweep emits an event. The full history of the vault is readable on-chain. No logins. No private database.",
-    icon: (
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6M9 13h6M9 17h6" />
-      </svg>
-    ),
+    icon: <FileText size={24} aria-hidden="true" />,
   },
 ];
 
@@ -672,9 +653,7 @@ export function CtaBanner({ onWatchDemo }: { onWatchDemo: () => void }) {
               Open the app
             </a>
             <button type="button" className="btn btn-ghost-dark" onClick={onWatchDemo}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-                <path d="M8 5.5v13l11-6.5-11-6.5z" />
-              </svg>
+            <Play size={18} fill="currentColor" aria-hidden="true" />
               Watch demo
             </button>
           </div>

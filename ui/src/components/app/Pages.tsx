@@ -10,20 +10,28 @@ import type { ActivityFilter } from "./ActivityFeed";
 import { useApp } from "./AppProvider";
 
 export function KeysPage() {
-  const { vault, selected, isOwner, now } = useApp();
+  const { vault, selected, isOwner, isConnected, now } = useApp();
+  // The demo vault is view-only: a visitor who has not connected a wallet
+  // (or does not own this vault) must not even see the grant affordance.
+  // The grant form appears only for the connected owner of this vault.
+  const canGrant = isConnected && isOwner;
   return (
     <div className="keys-layout">
-      <div className="keys-jump">
-        <a href="#grant" className="btn btn-primary btn-sm">
-          + Grant a key
-        </a>
-      </div>
+      {canGrant && (
+        <div className="keys-jump">
+          <a href="#grant" className="btn btn-primary btn-sm">
+            + Grant a key
+          </a>
+        </div>
+      )}
       <div className="keys-list">
         <SessionsPanel vault={vault} vaultAddress={selected} isOwner={isOwner} now={now} />
       </div>
-      <div id="grant" className="keys-grant">
-        <GrantPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
-      </div>
+      {canGrant && (
+        <div id="grant" className="keys-grant">
+          <GrantPanel vault={vault} vaultAddress={selected} isOwner={isOwner} />
+        </div>
+      )}
     </div>
   );
 }

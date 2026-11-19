@@ -7,6 +7,7 @@ import { injected } from "wagmi/connectors";
 import { ThemeToggle } from "@/lib/theme";
 import { APP_URL, BASE_PATH } from "@/lib/site";
 import { LogoLockup } from "./Logo";
+import { Menu, X } from "lucide-react";
 import { aevumTestnet } from "@/lib/config";
 import { plainConnectErrorMessage, plainSwitchErrorMessage, shortenAddress } from "@/lib/format";
 
@@ -274,15 +275,7 @@ export function Navbar() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
           >
-            {menuOpen ? (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            )}
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
         </div>
       </div>

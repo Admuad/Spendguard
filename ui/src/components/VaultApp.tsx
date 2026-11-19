@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useAccount, useConnect, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { injected } from "wagmi/connectors";
 import type { Address } from "viem";
+import { ArrowUpRight, KeyRound, ShieldCheck } from "lucide-react";
 import {
   DEPLOY_BLOCK,
   FACTORY_ADDRESS,
@@ -1783,30 +1784,17 @@ function MobileActionBar({
     {
       id: "deposit",
       label: "Vault",
-      icon: (
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z" />
-        </svg>
-      ),
+      icon: <ShieldCheck size={20} aria-hidden="true" />,
     },
     {
       id: "grant",
       label: "Grant",
-      icon: (
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="8" cy="15" r="4" />
-          <path d="m10.9 12.1 8.6-8.6M18 5l2 2M15 8l2 2" />
-        </svg>
-      ),
+      icon: <KeyRound size={20} aria-hidden="true" />,
     },
     {
       id: "pay",
       label: "Pay",
-      icon: (
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M7 17 17 7M8 7h9v9" />
-        </svg>
-      ),
+      icon: <ArrowUpRight size={20} aria-hidden="true" />,
     },
   ];
 
