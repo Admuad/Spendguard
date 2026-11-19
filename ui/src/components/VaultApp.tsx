@@ -1245,7 +1245,7 @@ function SessionRow({
             <span className="session-key-short">{shortenAddress(session.key)}</span>
           </a>
         </div>
-        <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
+        {status !== "Active" && <span className="badge">{status}</span>}
       </div>
       <UsageMeter session={session} vaultBalance={vaultBalance} now={now} totalSpent={totalSpent} />
       <div className="recipient-chips" aria-label="Allowed recipients">

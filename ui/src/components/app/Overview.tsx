@@ -190,7 +190,7 @@ export function Overview() {
                       <p className="key-name">{getKeyLabel(labels, selected, s.key) ?? "Unnamed key"}</p>
                       <p className="key-addr">{shortenAddress(s.key)}</p>
                     </div>
-                    <span className={`badge ${status === "Active" ? "badge-live" : ""}`}>{status}</span>
+                    {status !== "Active" && <span className="badge">{status}</span>}
                   </div>
                   <UsageMeter session={s} vaultBalance={balance} now={now} />
                   <p className="key-card-foot">

@@ -89,7 +89,6 @@ export function Hero({
         <div className="dash-card" aria-live="polite">
           <div className="dash-head">
             <h2>Vault dashboard</h2>
-            <span className="badge badge-live">Live on Aevum testnet</span>
             {vault.paused === true && <span className="badge badge-paused">Paused</span>}
             <span className="dash-sub">
               <a href={explorerAddressUrl(VAULT_ADDRESS)} target="_blank" rel="noreferrer">

@@ -657,3 +657,16 @@ items. All six are implemented, typechecked, built, verified with
 Screenshots in `verification/`: round2-390-landing-gap-light,
 round2-390-landing-dark, round2-390-keys-readonly-light,
 round2-390-settings-dark, round2-1440-landing-light.
+
+## Green badges removal (19 Nov 2026, early afternoon WAT)
+
+Follow-up to round 2: Muhammed asked for every green badge to go,
+including the "Live on Aevum testnet" pill on the hero dashboard.
+Removed: the hero Live pill (`Hero.tsx`), and the green "Active"
+status badge on session rows (`VaultApp.tsx`) and overview key cards
+(`Overview.tsx`). Non-active states (Revoked / Expired / Frozen) keep
+their plain neutral badge; an active key now shows no badge. The amber
+Paused badge is untouched (not green, and it signals vault state).
+Verified: zero `.badge-live` elements on the landing, overview and
+keys pages, no page errors. The `.badge-live` CSS rule remains defined
+but unused.
