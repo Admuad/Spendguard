@@ -11,7 +11,7 @@ import {
   readClient,
   spendGuardAbi,
 } from "./config";
-import { cachedLogToLog, readVaultLogCache, writeVaultLogCache } from "./vaultCache";
+import { cachedLogToLog, fetchDemoVaultSeed, readVaultLogCache, writeVaultLogCache } from "./vaultCache";
 
 /** One decoded vault event, newest first in the activity list. */
 export type VaultActivity =
@@ -288,9 +288,16 @@ export function useVaultData(
 
       // First load for this vault: hydrate from the shared log cache so the
       // activity feed and the session list render instantly, then only
-      // blocks after the saved tip are fetched below.
+      // blocks after the saved tip are fetched below. When there is no
+      // local cache (a first visit, or a new origin such as the Vercel
+      // deployment) the demo vault hydrates from the seed shipped with the
+      // app instead, so it never pays the full ~255k-block cold scan.
       if (scannedThroughRef.current === null) {
-        const cached = readVaultLogCache(vaultAddress);
+        const cached =
+          readVaultLogCache(vaultAddress) ??
+          (vaultAddress.toLowerCase() === VAULT_ADDRESS.toLowerCase()
+            ? await fetchDemoVaultSeed(vaultAddress)
+            : null);
         if (cached) {
           const cachedLogs = cached.logs.map((c) => cachedLogToLog(c, vaultAddress));
           logsRef.current = cachedLogs;

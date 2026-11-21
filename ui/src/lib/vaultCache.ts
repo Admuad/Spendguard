@@ -1,4 +1,5 @@
 import type { Log } from "viem";
+import { BASE_PATH } from "./site";
 
 /**
  * One shared on-chain log store for the whole app: the activity page, the
@@ -101,4 +102,37 @@ export function cachedLogToLog(c: CachedLog, address: `0x${string}`): Log {
     transactionHash: c.h,
     transactionIndex: 0,
   } as unknown as Log;
+}
+
+/**
+ * The demo vault's history, shipped with the app as a static seed
+ * (public/demo-vault-logs.json, regenerated at build time). A cold first
+ * visit to a new origin has no localStorage cache, and scanning ~255k
+ * blocks in 1,000-block chunks takes minutes on a phone. The seed is the
+ * same VaultLogCache shape, so hydrating from it is identical to hydrating
+ * from the local cache: the app renders instantly and only fetches blocks
+ * after the seed's tip. Returns null when the seed is missing, stale for a
+ * different vault, or unreadable, and the caller falls back to the full
+ * scan. Only the demo vault has a seed; other vaults always scan.
+ */
+export async function fetchDemoVaultSeed(
+  vault: `0x${string}`,
+): Promise<VaultLogCache | null> {
+  try {
+    const res = await fetch(`${BASE_PATH}/demo-vault-logs.json`);
+    if (!res.ok) return null;
+    const parsed = (await res.json()) as VaultLogCache;
+    if (
+      parsed.version !== 1 ||
+      typeof parsed.vault !== "string" ||
+      parsed.vault.toLowerCase() !== vault.toLowerCase() ||
+      typeof parsed.scannedThrough !== "string" ||
+      !Array.isArray(parsed.logs)
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
 }
