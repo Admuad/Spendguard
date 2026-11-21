@@ -842,7 +842,7 @@ await client.grantSession(vault, {
   maxPerTx: toBaseUnits("0.10"),
   spendCap: toBaseUnits("1.00"),
   expiresAt: 1795363200n, // one week out
-});`}</pre>
+}, { fundGas: true }); // also sends 0.01 tQDAY so the key can pay gas`}</pre>
         <div className="hero-cta-row">
           <a href={SDK_URL} target="_blank" rel="noreferrer" className="btn btn-primary">
             Read the SDK docs

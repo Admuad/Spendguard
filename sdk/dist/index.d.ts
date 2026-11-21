@@ -23,6 +23,6 @@
  * ```
  */
 export { erc20Abi, spendGuardAbi, spendGuardFactoryAbi } from "./abi.js";
-export { AEVUM_CHAIN_ID, AEVUM_EXPLORER_URL, AEVUM_LOG_CHUNK_BLOCKS, AEVUM_RPC_URL, AEVUM_TX_TYPE, SPENDGUARD_DEMO_VAULT_ADDRESS, SPENDGUARD_DEPLOY_BLOCK, SPENDGUARD_FACTORY_ADDRESS, TUSD8_ADDRESS, TUSD8_DECIMALS, } from "./constants.js";
-export { aevumTestnet, createSpendGuardClient, createSpendGuardWalletClient, explorerAddressUrl, explorerTxUrl, fromBaseUnits, toBaseUnits, type Payment, type Session, type SessionGrant, type SessionGrantedEvent, type SpendCheck, type SpendGuardClient, type SpendGuardClientOptions, } from "./client.js";
+export { AEVUM_CHAIN_ID, AEVUM_EXPLORER_URL, AEVUM_LOG_CHUNK_BLOCKS, AEVUM_RPC_URL, AEVUM_TX_TYPE, DEFAULT_GAS_FUND_AMOUNT, SPENDGUARD_DEMO_VAULT_ADDRESS, SPENDGUARD_DEPLOY_BLOCK, SPENDGUARD_FACTORY_ADDRESS, TUSD8_ADDRESS, TUSD8_DECIMALS, } from "./constants.js";
+export { aevumTestnet, createSpendGuardClient, createSpendGuardWalletClient, explorerAddressUrl, explorerTxUrl, fromBaseUnits, toBaseUnits, type Payment, type GrantSessionOptions, type GrantSessionResult, type Session, type SessionGrant, type SessionGrantedEvent, type SpendCheck, type SpendGuardClient, type SpendGuardClientOptions, } from "./client.js";
 //# sourceMappingURL=index.d.ts.map

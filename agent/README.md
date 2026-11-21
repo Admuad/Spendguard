@@ -45,6 +45,61 @@ Each user creates their own vault through the SpendGuard factory
 the agent at your vault with `VAULT_ADDRESS`. The default is the demo
 vault above.
 
+## The LLM agent (llm-agent.mjs)
+
+The same payment flow, but a language model decides the payment. You
+give it a task in plain language and it figures out the payee, the
+amount, and whether the payment fits the session bounds:
+
+```sh
+SESSION_KEY_PRIVATE_KEY=0x... \
+AGENT_TASK="pay the freelancer 0.10 tUSD8 for the logo" \
+AGENT_PAYEES='{"freelancer": "0x..."}' \
+AGENT_INVOICE_ID=llm-invoice-001 \
+node llm-agent.mjs --dry-run
+```
+
+The model is the decision layer, not the authority. It gets the task,
+the payee directory, and the live session limits (per-payment limit,
+remaining cap, vault balance, expiry, paused state), and returns a JSON
+decision. The agent then validates the decision: the recipient must be
+in the payee directory, the amount must parse, and the SDK's canSpend
+pre-flight must pass. The contract enforces the same bounds on-chain.
+If the model is unreachable, replies with garbage, picks an unknown
+address, or asks for more than the session allows, the agent refuses
+and sends nothing.
+
+Every run writes a transcript line to `llm-agent-transcript.jsonl`
+(task, prompt, raw model reply, parsed decision, pre-flight result,
+outcome). The transcript is what the demo displays to show the model
+reasoning. It never contains a secret.
+
+### The model provider (free by default)
+
+The default provider is Pollinations (`https://text.pollinations.ai`),
+which is free and needs no API key and no account. That is the $0 path
+the demo runs on. To use a key-based model instead, set
+`LLM_PROVIDER=openai` with `OPENAI_API_KEY` (and optionally
+`OPENAI_BASE_URL` and `LLM_MODEL` for any OpenAI-compatible endpoint).
+The provider is pluggable: see `llm-providers.mjs`.
+
+### What the model actually decides
+
+Given "pay the freelancer 0.10 tUSD8 for the logo" and a payee
+directory with the freelancer's address, the model returns
+`{"recipient": "<address>", "amount": "0.10", "reason": "..."}` and
+names the limit it checked. Given "pay the freelancer 5.00 tUSD8"
+against a 0.50 per-payment limit, the model refuses on its own:
+`{"refuse": true, "reason": "Requested amount exceeds per-payment limit"}`.
+Both behaviours were verified live against the demo vault on 21 Nov 2026
+with the free Pollinations provider.
+
+### Live run
+
+A live run needs an active session for the agent key, exactly like the
+scripted agent. If the session is revoked or expired, the pre-flight
+refuses and nothing is sent. Run the dry run first, every time.
+
 ## Dry run (no transaction, always safe)
 
 ```sh

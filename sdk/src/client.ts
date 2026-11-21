@@ -37,6 +37,7 @@ import {
   AEVUM_LOG_CHUNK_BLOCKS,
   AEVUM_RPC_URL,
   AEVUM_TX_TYPE,
+  DEFAULT_GAS_FUND_AMOUNT,
   SPENDGUARD_DEPLOY_BLOCK,
   SPENDGUARD_FACTORY_ADDRESS,
   TUSD8_ADDRESS,
@@ -114,6 +115,27 @@ export interface SpendGuardClientOptions {
   factoryAddress?: Address;
 }
 
+/** Options for granting a session. */
+export interface GrantSessionOptions {
+  /**
+   * Also send native tQDAY to the session key right after the grant
+   * confirms, so the key can pay for its own gas. A plain transfer, not
+   * a contract call. Defaults to false. The amount defaults to
+   * DEFAULT_GAS_FUND_AMOUNT (0.01 tQDAY).
+   */
+  fundGas?: boolean;
+  /** Amount of tQDAY to send when fundGas is true. Must be greater than zero. */
+  gasFundAmount?: bigint;
+}
+
+/** What grantSession returns. */
+export interface GrantSessionResult {
+  /** Hash of the grantSession transaction. */
+  grantHash: Hash;
+  /** Hash of the gas-funding transfer, only when fundGas was true. */
+  gasFundHash?: Hash;
+}
+
 export interface SpendGuardClient {
   readonly factoryAddress: Address;
   readonly publicClient: PublicClient;
@@ -123,7 +145,7 @@ export interface SpendGuardClient {
   vaultCount(): Promise<bigint>;
   allVaults(index: bigint): Promise<Address>;
   deposit(vault: Address, amount: bigint): Promise<{ approveHash?: Hash; depositHash: Hash }>;
-  grantSession(vault: Address, grant: SessionGrant): Promise<Hash>;
+  grantSession(vault: Address, grant: SessionGrant, options?: GrantSessionOptions): Promise<GrantSessionResult>;
   editSession(vault: Address, grant: SessionGrant): Promise<Hash>;
   revokeSession(vault: Address, sessionKey: Address): Promise<Hash>;
   executePayment(vault: Address, sessionKey: Address, recipient: Address, amount: bigint): Promise<Hash>;
@@ -176,6 +198,21 @@ async function writeAndWait(client: SpendGuardClient, params: WriteParams): Prom
   const wallet = requireWallet(client);
   const hash = await wallet.writeContract({
     ...params,
+    chain: aevumTestnet,
+    type: AEVUM_TX_TYPE,
+  } as never);
+  const receipt = await client.publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error(`Transaction reverted: ${hash}`);
+  return hash;
+}
+
+async function sendNativeAndWait(client: SpendGuardClient, to: Address, value: bigint): Promise<Hash> {
+  const wallet = requireWallet(client);
+  const account = requireAccount(client);
+  const hash = await wallet.sendTransaction({
+    account,
+    to,
+    value,
     chain: aevumTestnet,
     type: AEVUM_TX_TYPE,
   } as never);
@@ -284,14 +321,22 @@ export function createSpendGuardClient(options: SpendGuardClientOptions = {}): S
       return { approveHash, depositHash };
     },
 
-    async grantSession(vault, grant) {
+    async grantSession(vault, grant, options = {}) {
       const wallet = requireWallet(client);
-      return writeAndWait(client, {
-        address: requireAddress(vault, "vault"),
+      const vaultAddr = requireAddress(vault, "vault");
+      const sessionKey = requireAddress(grant.sessionKey, "sessionKey");
+      // Validate the funding amount before the grant goes on-chain, so a
+      // bad amount never leaves a granted-but-unfunded session behind.
+      const gasFundAmount = options.gasFundAmount ?? DEFAULT_GAS_FUND_AMOUNT;
+      if (options.fundGas && gasFundAmount <= 0n) {
+        throw new Error("gasFundAmount must be greater than zero");
+      }
+      const grantHash = await writeAndWait(client, {
+        address: vaultAddr,
         abi: spendGuardAbi,
         functionName: "grantSession",
         args: [
-          requireAddress(grant.sessionKey, "sessionKey"),
+          sessionKey,
           grant.recipients.map((r) => requireAddress(r, "recipient")),
           grant.maxPerTx,
           grant.spendCap,
@@ -299,6 +344,13 @@ export function createSpendGuardClient(options: SpendGuardClientOptions = {}): S
         ],
         account: requireAccount(client),
       });
+      let gasFundHash: Hash | undefined;
+      if (options.fundGas) {
+        // Plain native transfer, sent after the grant confirms. The key
+        // pays its own gas, so without this it cannot pay at all.
+        gasFundHash = await sendNativeAndWait(client, sessionKey, gasFundAmount);
+      }
+      return { grantHash, gasFundHash };
     },
 
     async editSession(vault, grant) {

@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node agent.mjs",
     "dry-run": "node agent.mjs --dry-run",
+    "llm": "node llm-agent.mjs",
+    "llm-dry-run": "node llm-agent.mjs --dry-run",
     "test": "node --test tests/*.test.mjs"
   },
   "engines": {

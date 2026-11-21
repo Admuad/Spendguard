@@ -71,6 +71,25 @@ export interface SpendGuardClientOptions {
     /** Defaults to the deployed factory. */
     factoryAddress?: Address;
 }
+/** Options for granting a session. */
+export interface GrantSessionOptions {
+    /**
+     * Also send native tQDAY to the session key right after the grant
+     * confirms, so the key can pay for its own gas. A plain transfer, not
+     * a contract call. Defaults to false. The amount defaults to
+     * DEFAULT_GAS_FUND_AMOUNT (0.01 tQDAY).
+     */
+    fundGas?: boolean;
+    /** Amount of tQDAY to send when fundGas is true. Must be greater than zero. */
+    gasFundAmount?: bigint;
+}
+/** What grantSession returns. */
+export interface GrantSessionResult {
+    /** Hash of the grantSession transaction. */
+    grantHash: Hash;
+    /** Hash of the gas-funding transfer, only when fundGas was true. */
+    gasFundHash?: Hash;
+}
 export interface SpendGuardClient {
     readonly factoryAddress: Address;
     readonly publicClient: PublicClient;
@@ -86,7 +105,7 @@ export interface SpendGuardClient {
         approveHash?: Hash;
         depositHash: Hash;
     }>;
-    grantSession(vault: Address, grant: SessionGrant): Promise<Hash>;
+    grantSession(vault: Address, grant: SessionGrant, options?: GrantSessionOptions): Promise<GrantSessionResult>;
     editSession(vault: Address, grant: SessionGrant): Promise<Hash>;
     revokeSession(vault: Address, sessionKey: Address): Promise<Hash>;
     executePayment(vault: Address, sessionKey: Address, recipient: Address, amount: bigint): Promise<Hash>;

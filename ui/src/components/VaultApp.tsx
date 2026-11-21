@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useAccount, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useSendTransaction, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useWalletConnect } from "@/lib/walletConnect";
 import type { Address } from "viem";
+import { parseEther } from "viem";
 import { ArrowUpRight, CircleCheck, KeyRound, ShieldCheck } from "lucide-react";
 import {
   DEPLOY_BLOCK,
@@ -40,6 +41,11 @@ import { UsageMeter } from "@/components/app/UsageMeter";
 /** Legacy transactions: the starter-kit docs warn some tooling mishandles
  * EIP-1559 fields on this chain, and the vault itself was deployed legacy. */
 const TX_TYPE = "legacy" as const;
+
+/** Gas funding sent to a session key when granting with funding enabled
+ * (0.01 tQDAY). A key pays its own gas, so it needs a little native token
+ * before it can pay. Plain native transfer, not a contract call. */
+const GAS_FUND_AMOUNT = parseEther("0.01");
 
 // ---------------------------------------------------------------------------
 // Shared write flow: signing -> confirming -> success / plain-language error.
@@ -109,6 +115,70 @@ export function useWriteFlow(onConfirmed?: () => void) {
   const submit = (args: Parameters<typeof writeContract>[0]) => {
     reset();
     writeContract({ ...args, type: TX_TYPE } as Parameters<typeof writeContract>[0]);
+  };
+
+  return { hash, phase, errorMessage, submit, reset };
+}
+
+// ---------------------------------------------------------------------------
+// Native-transfer flow: signing -> confirming -> success / plain-language
+// error. Mirrors useWriteFlow, but for a plain tQDAY transfer (no contract
+// call). Used to fund a session key with gas right after its grant.
+// ---------------------------------------------------------------------------
+export function useSendFlow(onConfirmed?: () => void) {
+  const { sendTransaction, data: hash, isPending, error, reset } = useSendTransaction();
+  const {
+    data: receipt,
+    isLoading: isConfirming,
+    isSuccess: receiptLoaded,
+    isError: receiptError,
+    error: receiptQueryError,
+  } = useWaitForTransactionReceipt({ hash });
+  const isReverted = receiptLoaded && receipt?.status === "reverted";
+  const isSuccess = receiptLoaded && receipt?.status === "success";
+  const isRevertThrow =
+    receiptError && receiptQueryError instanceof Error && receiptQueryError.name === "Error";
+  const confirmedHashRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isSuccess && hash && confirmedHashRef.current !== hash) {
+      confirmedHashRef.current = hash;
+      onConfirmed?.();
+    }
+  }, [isSuccess, hash, onConfirmed]);
+
+  const phase: TxPhase =
+    error || isReverted || receiptError
+      ? "error"
+      : isSuccess
+        ? "success"
+        : hash && isConfirming
+          ? "confirming"
+          : isPending
+            ? "signing"
+            : "idle";
+
+  const revertReason = receiptQueryError instanceof Error ? receiptQueryError.message.trim() : "";
+  const readableReason =
+    revertReason !== "" &&
+    revertReason !== "unknown reason" &&
+    /^[\x20-\x7E]{3,120}$/.test(revertReason)
+      ? revertReason
+      : null;
+
+  const errorMessage = error
+    ? plainErrorMessage(error)
+    : isReverted || isRevertThrow
+      ? readableReason
+        ? `The transfer was rejected on-chain: ${readableReason}. The grant itself already succeeded, so the key can spend once it holds tQDAY for gas.`
+        : "The transfer was rejected on-chain. The grant itself already succeeded, so the key can spend once it holds tQDAY for gas."
+      : receiptError
+        ? "The transfer was sent, but its confirmation could not be read. Check the explorer link before trying again, so the same transfer is not sent twice."
+        : null;
+
+  const submit = (args: Parameters<typeof sendTransaction>[0]) => {
+    reset();
+    sendTransaction({ ...args, type: TX_TYPE } as Parameters<typeof sendTransaction>[0]);
   };
 
   return { hash, phase, errorMessage, submit, reset };
@@ -540,13 +610,28 @@ export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData;
   const [customExpiry, setCustomExpiry] = useState("");
   const [useCustomExpiry, setUseCustomExpiry] = useState(false);
   const [keyName, setKeyName] = useState("");
+  const [fundGas, setFundGas] = useState(true);
   const { saveLabel } = useKeyLabels();
+
+  // The key address at grant time. The form clears the key field when the
+  // grant confirms, so the address is snapshotted here before submitting.
+  // Set only when funding was requested; null means no gas transfer.
+  const pendingGasKeyRef = useRef<Address | null>(null);
+  const gasFlow = useSendFlow();
 
   const grantFlow = useWriteFlow(() => {
     vault.refresh();
     setSessionKey("");
     setRecipients("");
     setKeyName("");
+    // Grant confirmed: fund the key with gas if the owner asked for it.
+    // A plain tQDAY transfer to the key address, so the key can pay for
+    // its own gas. The grant already succeeded; this is a second step.
+    const keyToFund = pendingGasKeyRef.current;
+    pendingGasKeyRef.current = null;
+    if (keyToFund) {
+      gasFlow.submit({ to: keyToFund, value: GAS_FUND_AMOUNT });
+    }
   });
 
   const parsedMax = useMemo(() => parseTusd8(maxPerTx), [maxPerTx]);
@@ -756,6 +841,22 @@ export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData;
         )}
       </div>
 
+      <label className="check-row" htmlFor="grant-fund-gas">
+        <input
+          id="grant-fund-gas"
+          type="checkbox"
+          checked={fundGas}
+          onChange={(e) => setFundGas(e.target.checked)}
+          disabled={busy}
+        />
+        <span>Also send 0.01 tQDAY for gas</span>
+      </label>
+      <p className="field-hint" style={{ marginTop: 6, marginBottom: 16 }}>
+        A session key pays its own gas, so it needs a little tQDAY before it
+        can pay. The transfer goes to the key address right after the grant
+        confirms, in a second step.
+      </p>
+
       {formValid && expiresAt !== null && (
         <div className="confirm-box" aria-label="Grant summary">
           <h4>Review before signing</h4>
@@ -785,6 +886,12 @@ export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData;
             <span>Expires</span>
             <span>{formatExpiry(expiresAt)}</span>
           </div>
+          {fundGas && (
+            <div className="confirm-row">
+              <span>Gas for the key</span>
+              <span>0.01 tQDAY, sent after the grant</span>
+            </div>
+          )}
           <div className="confirm-row">
             <span>Maximum loss if this key is stolen</span>
             <span>{parsedCap !== null ? `${formatTusd8(parsedCap)} tUSD8` : "…"}</span>
@@ -825,6 +932,9 @@ export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData;
         onClick={() => {
           if (!formValid || expiresAt === null || parsedMax === null || parsedCap === null) return;
           if (keyName.trim() !== "") saveLabel(vaultAddress, sessionKey.trim(), keyName.trim());
+          // Snapshot the key for gas funding: the form clears the key
+          // field when the grant confirms, so this is captured now.
+          pendingGasKeyRef.current = fundGas ? (sessionKey.trim() as Address) : null;
           grantFlow.submit({
             address: vaultAddress,
             abi: spendGuardAbi,
@@ -846,6 +956,12 @@ export function GrantPanel({ vault, vaultAddress, isOwner }: { vault: VaultData;
         hash={grantFlow.hash}
         errorMessage={grantFlow.errorMessage}
         successLabel="Session granted. The key can spend within its bounds now."
+      />
+      <TxStatus
+        phase={gasFlow.phase}
+        hash={gasFlow.hash}
+        errorMessage={gasFlow.errorMessage}
+        successLabel="0.01 tQDAY sent to the key for gas. The key can pay now."
       />
     </div>
   );

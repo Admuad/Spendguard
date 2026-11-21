@@ -207,6 +207,12 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 
 The `sdk/` directory is a TypeScript SDK (`spendguard-sdk`, MIT) that wraps the factory and vaults with typed helpers: create a vault, deposit, grant/edit/revoke a session, pay as a session key, pre-flight checks, and chunked history reads. It follows the Aevum rules for you: legacy transactions, the 1,000-block log limit, exact approvals. See `sdk/README.md`. Unit tests run with `npm test`; the live smoke test (`npm run smoke-test`) proved the full flow on the testnet on 21 Nov 2026: fresh vault, deposit 0.10, grant, pay 0.01, over-cap refused, revoke, sweep to zero.
 
+## LLM agent
+
+The `agent/` directory also holds an LLM agent (`llm-agent.mjs`, 11 tests) that turns a plain-language task into a payment. You tell it, in words, what to pay and to whom; the model decides the recipient and amount, the agent validates that decision against the live session limits from the chain, runs the SDK `canSpend` pre-flight, and only then executes the payment through the SDK. The model never touches a key and never moves money by itself. The chain enforces the bounds: if the model picks a recipient outside the allowlist, an amount over the per-payment limit, or anything past the cap, the payment is refused before it is sent.
+
+Proven live on 21 Nov 2026: the agent paid 0.10 tUSD8 to the freelancer for the logo, from the demo vault, within a 1.00 cap. Transaction: https://explorer-test.qday.info/tx/0x96da9c30a0fa510bb57a04f1054e044dd8430b1b8e7c5369a233cb65925b71a4. The default provider is Pollinations, free with no API key; any OpenAI-compatible endpoint works through `LLM_PROVIDER=openai` and `OPENAI_API_KEY`. See `agent/README.md`.
+
 ## Go-to-market and path to mainnet
 
 Who this is for: anyone who lets an agent spend money. Agent builders who need their agent to pay merchants without handing it a wallet key. Businesses paying AI agents or contractors for completed work. DAOs and treasuries giving an operator scoped spending power. Cashiers and bots that pay on a schedule. The problem is the same in each case: the spending key must be bounded, revocable, and auditable, and the owner must always be able to take the money back.
@@ -221,6 +227,7 @@ What mainnet needs before real money touches it: a third-party audit of the vaul
 
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
 - [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
+- [x] LLM agent (`agent/llm-agent.mjs`, 11 tests): turns a plain-language task into a payment, validated against the live session limits, live-run proven 21 Nov 2026 (0.10 tUSD8 to the freelancer).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
 - [x] Demo video against the live deployment (real on-chain grant, pay, revoke, and sweep shown on camera with tx hashes, plus over-cap and revoked-key reverts): https://youtu.be/ZwRmUPXpKJ8.
 - [x] TypeScript SDK for other builders (`sdk/`, 11 unit tests, live smoke test passed 21 Nov 2026 on a fresh vault).

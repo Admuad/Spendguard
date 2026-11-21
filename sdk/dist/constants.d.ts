@@ -26,4 +26,14 @@ export declare const SPENDGUARD_DEPLOY_BLOCK = 3492987n;
 export declare const AEVUM_LOG_CHUNK_BLOCKS = 1000n;
 /** Aevum uses legacy (type 0) transactions. */
 export declare const AEVUM_TX_TYPE: "legacy";
+/**
+ * Default gas funding sent to a session key when granting with gas
+ * funding enabled (0.01 tQDAY). A session key pays its own gas, so it
+ * needs a little native token before it can pay. 0.01 tQDAY covers many
+ * payments at Aevum testnet gas prices. This is a plain native transfer,
+ * not a contract call, and not a gasless flow: full gasless needs
+ * EIP-3009 on tUSD8, which the deployed token does not have (see the
+ * README roadmap). The owner can pass a different amount per grant.
+ */
+export declare const DEFAULT_GAS_FUND_AMOUNT = 10000000000000000n;
 //# sourceMappingURL=constants.d.ts.map

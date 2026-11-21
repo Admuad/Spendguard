@@ -17,6 +17,7 @@ import {
   SPENDGUARD_FACTORY_ADDRESS,
   SPENDGUARD_DEMO_VAULT_ADDRESS,
   AEVUM_CHAIN_ID,
+  DEFAULT_GAS_FUND_AMOUNT,
 } from "../dist/index.js";
 
 describe("amount helpers", () => {
@@ -42,6 +43,11 @@ describe("constants", () => {
     assert.equal(TUSD8_ADDRESS, "0x456569838f1d43009A91ebA4263147Afd7233483");
     assert.equal(SPENDGUARD_FACTORY_ADDRESS, "0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE");
     assert.equal(SPENDGUARD_DEMO_VAULT_ADDRESS, "0x048a64225419C11C9Ff0CB39aA925902c5e965Ac");
+  });
+
+  it("defaults gas funding to 0.01 tQDAY", () => {
+    // 0.01 tQDAY at 18 decimals = 10^16 wei.
+    assert.equal(DEFAULT_GAS_FUND_AMOUNT, 10_000_000_000_000_000n);
   });
 });
 
@@ -100,6 +106,22 @@ describe("client wiring", () => {
     );
     await assert.rejects(
       () => client.revokeSession(SPENDGUARD_DEMO_VAULT_ADDRESS, SPENDGUARD_DEMO_VAULT_ADDRESS),
+      /needs a wallet client/,
+    );
+    // grantSession with gas funding also refuses: no wallet, no grant, no transfer.
+    await assert.rejects(
+      () =>
+        client.grantSession(
+          SPENDGUARD_DEMO_VAULT_ADDRESS,
+          {
+            sessionKey: SPENDGUARD_DEMO_VAULT_ADDRESS,
+            recipients: [SPENDGUARD_DEMO_VAULT_ADDRESS],
+            maxPerTx: 1n,
+            spendCap: 1n,
+            expiresAt: 1795363200n,
+          },
+          { fundGas: true },
+        ),
       /needs a wallet client/,
     );
   });

@@ -33,13 +33,15 @@ const owner = createSpendGuardClient({
 });
 const { vault, transactionHash } = await owner.createVault();
 await owner.deposit(vault, toBaseUnits("3.00"));
-await owner.grantSession(vault, {
+// fundGas sends 0.01 tQDAY to the key right after the grant confirms,
+// so the key can pay for its own gas. A plain transfer, not a contract call.
+const { grantHash, gasFundHash } = await owner.grantSession(vault, {
   sessionKey: "0x...agent-address...",
   recipients: ["0x...merchant-address..."],
   maxPerTx: toBaseUnits("0.10"),
   spendCap: toBaseUnits("1.00"),
   expiresAt: BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 3600),
-});
+}, { fundGas: true });
 
 // Agent: the agent holds ONLY the session key. It checks, then pays.
 const agent = createSpendGuardClient({
@@ -74,6 +76,7 @@ const payments = await readOnly.getPayments(vault);
 - **Exact approvals.** `deposit` approves exactly the deposit amount, never an unlimited allowance.
 - **Pre-flight checks.** `canSpend` mirrors the contract's checks (paused, active, expiry, per-tx limit, cap, allowlist, balance) before a payment is sent. The contract enforces the same bounds on-chain, so the check is a second layer, not the only layer.
 - **One confirmation.** Every write waits for its receipt and throws if the transaction reverts.
+- **Gas funding for keys.** A session key pays its own gas, so it needs a little tQDAY before it can pay. Pass `{ fundGas: true }` to `grantSession` and the SDK sends 0.01 tQDAY to the key right after the grant confirms (pass `gasFundAmount` to change the amount). This is a plain native transfer, not a gasless flow. Full gasless is a roadmap item: it needs EIP-3009 on tUSD8, which the deployed token does not have, so no gasless flow via the token is possible today.
 
 ## Session model
 
@@ -102,6 +105,13 @@ npm run smoke-test  # live end-to-end run on Aevum testnet (needs a test wallet)
 ```
 
 The smoke test creates a fresh vault through the SDK, deposits 0.10 tUSD8, grants a session key, pays 0.01 tUSD8, revokes the key, and sweeps the vault back to zero. It prints every transaction hash. It needs `AEVUM_TESTNET_PRIVATE_KEY` set to a TEST wallet key, and never prints the key.
+
+## Changelog
+
+### 1.1.0
+
+- One-click gas funding: `grantSession` accepts `{ fundGas: true }` and sends 0.01 tQDAY to the key right after the grant confirms, so the key can pay for its own gas. Pass `gasFundAmount` to change the amount.
+- Breaking change: `grantSession` now returns `{ grantHash, gasFundHash }` instead of a bare transaction hash. `gasFundHash` is only set when gas funding was requested.
 
 ## License
 

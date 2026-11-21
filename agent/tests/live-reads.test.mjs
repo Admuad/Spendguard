@@ -13,18 +13,17 @@ import {
 // and no transaction is sent: the tests read real session state and run it
 // through the same pre-flight decision function the agent uses.
 //
-// Known sessions on the current demo vault (18 Nov 2026, editSession build):
-//   demo key: 0x8b473F82D8371345F9572b956Def5602D8fD36d1, cap 1.00,
-//     per-tx 0.50, recipient = testnet wallet. EXPIRED ~19 Nov 13:58 WAT.
-//     The two live-session tests below fail until the owner grants a fresh
-//     session to this key (or a new agent key); that is the tests working
-//     as designed, not a code bug.
+// Known sessions on the current demo vault (21 Nov 2026, LLM agent run):
+//   live key: 0x7212Cb516bcB44Dc50c965A47c192A14990AE185 (the v10 demo key),
+//     cap 1.00, per-tx 0.50, recipient = 0xeBA9A16508e5222ccfC3FFabcae4c9EC0dEE7FC1,
+//     granted 21 Nov 2026, expires 30 days later. Spent 0.10 so far, 0.90 left.
 //   revoked key: 0x028BF06e4eBF397D8763B62abb3Ef611570B20e2, a throwaway
 //     granted and revoked the same day; its remaining cap reads 0.50 but
 //     it is dead. The key was never saved and nobody controls it.
 
-const LIVE_KEY = "0x8b473F82D8371345F9572b956Def5602D8fD36d1";
+const LIVE_KEY = "0x7212Cb516bcB44Dc50c965A47c192A14990AE185";
 const REVOKED_KEY = "0x028BF06e4eBF397D8763B62abb3Ef611570B20e2";
+const RECIPIENT = "0xeBA9A16508e5222ccfC3FFabcae4c9EC0dEE7FC1";
 const TESTNET_WALLET = "0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898";
 const STRANGER = "0x000000000000000000000000000000000000dEaD";
 const NEVER_GRANTED = "0x0000000000000000000000000000000000000001";
@@ -39,7 +38,7 @@ describe("live chain reads (read-only)", { timeout: 30_000 }, () => {
   });
 
   it("reads the live demo session state", async () => {
-    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, TESTNET_WALLET);
+    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, RECIPIENT);
     assert.equal(state.paused, false);
     assert.equal(state.sessionActive, true);
     assert.equal(state.recipientAllowed, true);
@@ -51,14 +50,14 @@ describe("live chain reads (read-only)", { timeout: 30_000 }, () => {
   });
 
   it("a valid intent against the live session passes pre-flight", async () => {
-    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, TESTNET_WALLET);
+    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, RECIPIENT);
     const decision = evaluatePreflight(state, { amount: 100_000n });
     assert.equal(decision.ok, true);
     assert.deepEqual(decision.failures, []);
   });
 
   it("an over-cap intent against the live session is refused", async () => {
-    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, TESTNET_WALLET);
+    const state = await fetchPreflightState(client, DEFAULT_VAULT_ADDRESS, LIVE_KEY, RECIPIENT);
     const decision = evaluatePreflight(state, { amount: 600_000n });
     assert.equal(decision.ok, false);
     assert.ok(decision.failures.some((f) => /per-payment limit/.test(f)));
