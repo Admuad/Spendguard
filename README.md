@@ -8,11 +8,11 @@ Aevum has no session-key tooling yet: the official SDK ships in Q1 2027, and no 
 
 Spending authority becomes a grantable, revocable, auditable object, not a shared wallet key.
 
-- **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
+- **Track:** Native AI Assistants (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
 - **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI + TypeScript SDK complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md) and [sdk/README.md](sdk/README.md)). Demo video (1m37s, light mode, real on-chain grant, pay, revoke, sweep) is on YouTube: https://youtu.be/EH8uomhD2r8, and plays from Watch Demo on the demo site.
 - **Author:** built by Muhammed Adediran ([@Admuad](https://github.com/Admuad)), solo, for the Aevum Builder Challenge #1.
-- **Deployed commit:** https://github.com/Admuad/Spendguard/commit/50f965104559c26e61c95713a1ca0f7c3c29de37 (main; this commit deployed the contracts and the live site).
-- **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`).
+- **Deployed commit:** https://github.com/Admuad/Spendguard/commit/50f965104559c26e61c95713a1ca0f7c3c29de37 (main; this commit deployed the contracts. The live site tracks the current main head.)
+- **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`). Mirror: https://spendguard-ivory.vercel.app.
 - **Brand:** logo, colors, typography, and usage rules in [BRANDING.md](BRANDING.md).
 
 ## How it works
@@ -144,17 +144,17 @@ Copy `.env.example` to `.env` (gitignored) and fill it in. Deploy scripts read t
 
 | Item | Address |
 |---|---|
-| tUSD8 (6 decimals) | `0x456569838f1d43009A91ebA4263147Afd7233483` |
+| tUSD8 (6 decimals) | [`0x456569838f1d43009A91ebA4263147Afd7233483`](https://explorer-test.qday.info/token/0x456569838f1d43009A91ebA4263147Afd7233483) |
 | RPC | `https://rpc-test.qday.info` |
 | Explorer | `https://explorer-test.qday.info` |
-| Demo vault (homepage) | `0x048a64225419C11C9Ff0CB39aA925902c5e965Ac` (funded 3.00 tUSD8) |
-| SpendGuard factory | `0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE` |
-| Factory deploy tx | `0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a` (18 Nov 2026, deployer `0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898`) |
-| First factory vault | `0x048a64225419C11C9Ff0CB39aA925902c5e965Ac` (the demo vault, created by the deployer wallet; a second vault owned by another address verified isolation live) |
+| Demo vault (homepage) | [`0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`](https://explorer-test.qday.info/address/0x048a64225419C11C9Ff0CB39aA925902c5e965Ac) (funded 3.00 tUSD8) |
+| SpendGuard factory | [`0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE`](https://explorer-test.qday.info/address/0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE) |
+| Factory deploy tx | [`0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a`](https://explorer-test.qday.info/tx/0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a) (18 Nov 2026, deployer `0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898`) |
+| First factory vault | [`0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`](https://explorer-test.qday.info/address/0x048a64225419C11C9Ff0CB39aA925902c5e965Ac) (the demo vault, created by the deployer wallet; a second vault owned by another address verified isolation live) |
 
 The first deployment (demo vault `0x9a11…` + factory `0x54c6…`) was swept and retired on 18 Nov 2026; the addresses above are the current deployment.
 
-Live end-to-end proof on the testnet (18 Nov 2026, same deployer wallet): deposit 1,000,000 → grant session (cap 800,000, per-tx 400,000) → execute 300,000 → over-cap 500,000 reverted `PerTxLimitExceeded` → non-allowlist recipient reverted `RecipientNotAllowed` → revoke → post-revoke spend reverted `SessionNotActive` → `ownerWithdraw` swept the vault to 0 and the deployer ended back at exactly 6,000,000 tUSD8. Evidence txs: grant `0xc8827806fd60595f99d3e52b11abd2496bed06c3070a7debb2eb34ced693f1fc`, payment `0xe3634e7f7d467157fd82ccbbae1fafcb97374fbff3a0b56169badca880e3325f`, revoke `0x20a6058d105140758cf88c5befb577fda72d3e15cd76350fe42a8c7620e73769`, withdraw `0x4517d7175503af3de4fe20b2b636657a1d17e76db24eb2af28724ba9c34f37d3`.
+Live end-to-end proof on the testnet (18 Nov 2026, same deployer wallet): deposit 1,000,000 → grant session (cap 800,000, per-tx 400,000) → execute 300,000 → over-cap 500,000 reverted `PerTxLimitExceeded` → non-allowlist recipient reverted `RecipientNotAllowed` → revoke → post-revoke spend reverted `SessionNotActive` → `ownerWithdraw` swept the vault to 0 and the deployer ended back at exactly 6,000,000 tUSD8. Evidence txs: grant [`0xc8827806fd60595f99d3e52b11abd2496bed06c3070a7debb2eb34ced693f1fc`](https://explorer-test.qday.info/tx/0xc8827806fd60595f99d3e52b11abd2496bed06c3070a7debb2eb34ced693f1fc), payment [`0xe3634e7f7d467157fd82ccbbae1fafcb97374fbff3a0b56169badca880e3325f`](https://explorer-test.qday.info/tx/0xe3634e7f7d467157fd82ccbbae1fafcb97374fbff3a0b56169badca880e3325f), revoke [`0x20a6058d105140758cf88c5befb577fda72d3e15cd76350fe42a8c7620e73769`](https://explorer-test.qday.info/tx/0x20a6058d105140758cf88c5befb577fda72d3e15cd76350fe42a8c7620e73769), withdraw [`0x4517d7175503af3de4fe20b2b636657a1d17e76db24eb2af28724ba9c34f37d3`](https://explorer-test.qday.info/tx/0x4517d7175503af3de4fe20b2b636657a1d17e76db24eb2af28724ba9c34f37d3).
 
 ### Deploy (testnet only)
 
@@ -222,7 +222,7 @@ What mainnet needs before real money touches it: a third-party audit of the vaul
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
 - [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
-- [x] Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes): https://youtu.be/EH8uomhD2r8.
+- [x] Demo video against the live deployment (real on-chain grant, pay, revoke, and sweep shown on camera with tx hashes): https://youtu.be/EH8uomhD2r8.
 - [x] TypeScript SDK for other builders (`sdk/`, 10 unit tests, live smoke test passed 21 Nov 2026 on a fresh vault).
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack, a roadmap footnote, not an integration claim).
