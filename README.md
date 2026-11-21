@@ -9,7 +9,7 @@ Aevum has no session-key tooling yet: the official SDK ships in Q1 2027, and no 
 Spending authority becomes a grantable, revocable, auditable object, not a shared wallet key.
 
 - **Track:** Native AI Assistants (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
-- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI + TypeScript SDK complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md) and [sdk/README.md](sdk/README.md)). Demo video (1m37s, light mode, real on-chain grant, pay, revoke, sweep) is on YouTube: https://youtu.be/EH8uomhD2r8, and plays from Watch Demo on the demo site.
+- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI + TypeScript SDK complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md) and [sdk/README.md](sdk/README.md)). Demo video (1m55s, light mode, real on-chain grant, pay, revoke, sweep, plus over-cap and revoked-key reverts) is on YouTube: https://youtu.be/ZwRmUPXpKJ8.
 - **Author:** built by Muhammed Adediran ([@Admuad](https://github.com/Admuad)), solo, for the Aevum Builder Challenge #1.
 - **Deployed commit:** https://github.com/Admuad/Spendguard/commit/50f965104559c26e61c95713a1ca0f7c3c29de37 (main; this commit deployed the contracts. The live site tracks the current main head.)
 - **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`). Mirror: https://spendguard-ivory.vercel.app.
@@ -222,11 +222,12 @@ What mainnet needs before real money touches it: a third-party audit of the vaul
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
 - [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
-- [x] Demo video against the live deployment (real on-chain grant, pay, revoke, and sweep shown on camera with tx hashes): https://youtu.be/EH8uomhD2r8.
-- [x] TypeScript SDK for other builders (`sdk/`, 10 unit tests, live smoke test passed 21 Nov 2026 on a fresh vault).
+- [x] Demo video against the live deployment (real on-chain grant, pay, revoke, and sweep shown on camera with tx hashes, plus over-cap and revoked-key reverts): https://youtu.be/ZwRmUPXpKJ8.
+- [x] TypeScript SDK for other builders (`sdk/`, 11 unit tests, live smoke test passed 21 Nov 2026 on a fresh vault).
+- [x] One-click gas funding when granting a key: the owner can also send 0.01 tQDAY to the key (UI checkbox and SDK `grantSession` option `{ fundGas: true }`), so the key can pay for its own gas without a separate manual transfer.
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack, a roadmap footnote, not an integration claim).
-- No EIP-3009 gasless path: the deployed tUSD8 has no `receiveWithAuthorization`/`transferWithAuthorization` (verified 18 Nov 2026), so no gasless flow via the token is possible. The core vault works without any relayer. EIP-2612 `permit` is present on the token if a signed-approval flow is ever wanted.
+- No EIP-3009 gasless path: the deployed tUSD8 has no `receiveWithAuthorization`/`transferWithAuthorization` (verified 18 Nov 2026), so no gasless flow via the token is possible. The core vault works without any relayer. EIP-2612 `permit` is present on the token if a signed-approval flow is ever wanted. Until a gasless path exists, the stopgap is one-click gas funding: granting a key can also send it 0.01 tQDAY for gas (shipped in the UI and SDK).
 
 ## License
 
