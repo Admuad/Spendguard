@@ -9,6 +9,7 @@ import {
   Bento,
   Capabilities,
   CtaBanner,
+  DevelopersSection,
   Faq,
   Footer,
   HowItWorks,
@@ -33,6 +34,7 @@ export default function Home() {
         <HowItWorks />
         <Capabilities />
         <VerifySection />
+        <DevelopersSection />
         <Bento />
         <RoleTabs />
         <SetupGuide />

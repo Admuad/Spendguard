@@ -30,6 +30,9 @@ export const RPC_URL = "https://rpc-test.qday.info";
 export const EXPLORER_URL = "https://explorer-test.qday.info";
 export const FAUCET_URL = "https://faucet.qday.info/en";
 export const REPO_URL = "https://github.com/Admuad/Spendguard";
+export const SDK_URL = "https://github.com/Admuad/Spendguard/tree/main/sdk";
+export const AGENT_URL = "https://github.com/Admuad/Spendguard/tree/main/agent";
+export const CONTRACTS_URL = "https://github.com/Admuad/Spendguard/tree/main/src";
 export const DORAHACKS_URL = "https://dorahacks.io/hackathon/qday/detail";
 
 // The demo vault shown on the homepage (18 Nov 2026, second deployment:

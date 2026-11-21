@@ -1849,6 +1849,28 @@ summary:focus-visible,
   margin-top: 30px;
 }
 
+/* Developers section: install snippet. Dark, monospace, scrolls sideways on small screens. */
+.code-block {
+  background: #0a0a0a;
+  color: #e8e8e8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin: 32px 0 0;
+  overflow-x: auto;
+  white-space: pre;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .code-block {
+    font-size: 11px;
+    padding: 18px 16px;
+  }
+}
+
 .footer {
   border-top: 1px solid var(--border);
   padding: 48px 0 56px;

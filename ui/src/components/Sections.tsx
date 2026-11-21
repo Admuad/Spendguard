@@ -9,6 +9,8 @@ import { LogoLockup } from "./Logo";
 import { formatTusd8, shortenAddress } from "@/lib/format";
 import { APP_URL, BASE_PATH } from "@/lib/site";
 import {
+  AGENT_URL,
+  CONTRACTS_URL,
   DEMO_VIDEO_URL,
   DORAHACKS_URL,
   EXPLORER_URL,
@@ -16,6 +18,7 @@ import {
   FAUCET_URL,
   REPO_URL,
   RPC_URL,
+  SDK_URL,
   TUSD8_ADDRESS,
   VAULT_ADDRESS,
   explorerAddressUrl,
@@ -738,6 +741,26 @@ export function Footer() {
                 </li>
               </ul>
             </div>
+            <div>
+              <h4>Developers</h4>
+              <ul>
+                <li>
+                  <a href={SDK_URL} target="_blank" rel="noreferrer">
+                    TypeScript SDK
+                  </a>
+                </li>
+                <li>
+                  <a href={AGENT_URL} target="_blank" rel="noreferrer">
+                    Agent script
+                  </a>
+                </li>
+                <li>
+                  <a href={CONTRACTS_URL} target="_blank" rel="noreferrer">
+                    Smart contracts
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <div className="footer-bottom">
@@ -786,6 +809,44 @@ export function VerifySection() {
         </ul>
         <div className="hero-cta-row verify-cta">
           <a href={APP_URL} className="btn btn-primary">Open the app</a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Build with SpendGuard: the TypeScript SDK for other builders.
+// ---------------------------------------------------------------------------
+export function DevelopersSection() {
+  return (
+    <section className="section section-tight" id="developers">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow eyebrow-dark">For developers</span>
+          <h2 className="section-title">Build with SpendGuard, don&apos;t rebuild it</h2>
+          <p className="section-sub">
+            A TypeScript SDK that wraps the factory and vaults. Create a vault,
+            grant a session key, pay within bounds, revoke in one click. It
+            follows the Aevum rules for you: legacy transactions, the 1,000-block
+            log limit, exact approvals.
+          </p>
+        </div>
+        <pre className="code-block">{`npm install spendguard-sdk viem
+
+const { vault } = await client.createVault();
+await client.deposit(vault, toBaseUnits("3.00"));
+await client.grantSession(vault, {
+  sessionKey: agent,
+  recipients: [merchant],
+  maxPerTx: toBaseUnits("0.10"),
+  spendCap: toBaseUnits("1.00"),
+  expiresAt: 1795363200n, // one week out
+});`}</pre>
+        <div className="hero-cta-row">
+          <a href={SDK_URL} target="_blank" rel="noreferrer" className="btn btn-primary">
+            Read the SDK docs
+          </a>
         </div>
       </div>
     </section>
