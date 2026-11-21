@@ -9,7 +9,7 @@ Aevum has no session-key tooling yet: the official SDK ships in Q1 2027, and no 
 Spending authority becomes a grantable, revocable, auditable object, not a shared wallet key.
 
 - **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
-- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md)). Demo video (1m37s, light mode, real on-chain grant, pay, revoke, sweep) is on YouTube: https://youtu.be/EH8uomhD2r8, and plays from Watch Demo on the demo site.
+- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI + TypeScript SDK complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md) and [sdk/README.md](sdk/README.md)). Demo video (1m37s, light mode, real on-chain grant, pay, revoke, sweep) is on YouTube: https://youtu.be/EH8uomhD2r8, and plays from Watch Demo on the demo site.
 - **Author:** built by Muhammed Adediran ([@Admuad](https://github.com/Admuad)), solo, for the Aevum Builder Challenge #1.
 - **Deployed commit:** https://github.com/Admuad/Spendguard/commit/50f965104559c26e61c95713a1ca0f7c3c29de37 (main; this commit deployed the contracts and the live site).
 - **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`).
@@ -203,12 +203,27 @@ Custom errors are granular (`CapExceeded`, `PerTxLimitExceeded`, `RecipientNotAl
 
 The vault is a single self-contained contract plus standard OpenZeppelin dependencies, and the factory is one more small contract. To create your own vault on the testnet, use the factory on the demo page, no code needed. To deploy your own factory: clone, `forge install`, set `TUSD8_ADDRESS` to your token, run the factory deploy script. To point an agent at a deployed vault, the agent needs only the vault address, its own session-key address, and the `executePayment` ABI. It must never hold the owner key.
 
+## SDK for other builders
+
+The `sdk/` directory is a TypeScript SDK (`spendguard-sdk`, MIT) that wraps the factory and vaults with typed helpers: create a vault, deposit, grant/edit/revoke a session, pay as a session key, pre-flight checks, and chunked history reads. It follows the Aevum rules for you: legacy transactions, the 1,000-block log limit, exact approvals. See `sdk/README.md`. Unit tests run with `npm test`; the live smoke test (`npm run smoke-test`) proved the full flow on the testnet on 21 Nov 2026: fresh vault, deposit 0.10, grant, pay 0.01, over-cap refused, revoke, sweep to zero.
+
+## Go-to-market and path to mainnet
+
+Who this is for: anyone who lets an agent spend money. Agent builders who need their agent to pay merchants without handing it a wallet key. Businesses paying AI agents or contractors for completed work. DAOs and treasuries giving an operator scoped spending power. Cashiers and bots that pay on a schedule. The problem is the same in each case: the spending key must be bounded, revocable, and auditable, and the owner must always be able to take the money back.
+
+How it reaches them: the Aevum mainnet builder program is the first channel. This challenge offers a fast track into it ahead of the mainnet launch in February, and SpendGuard is built to flip from testnet to mainnet without extra building: same contracts, a fresh deployment, the mainnet stablecoin in place of tUSD8. The second channel is the SDK above: other builders adopt the vaults instead of writing their own session-key logic, which makes SpendGuard ecosystem infrastructure, not just one app. The third is the demo itself: a working app, a video, and a README a stranger can follow are the onboarding path.
+
+Monetization, planned not built: the deployed contracts take no fees, and that is deliberate. Trust comes first when you hold other people's money. The fee model for v2 is a small basis-points fee on payments through the factory, or a flat fee per vault creation, charged at the contract level so it cannot be bypassed. A hosted version (vault creation and monitoring without running your own node) and paid integration support for teams are the other two options. None of these is in the deployed contracts today, and none is claimed to be.
+
+What mainnet needs before real money touches it: a third-party audit of the vault and factory, a bug bounty, and a timelock on any fee change. The contracts are written to be auditable (56 Foundry tests, a threat model in THREAT-MODEL.md, 19 numbered invariants), and the testnet deployment is the proof ground for that audit.
+
 ## Roadmap
 
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
 - [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
 - [x] Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes): https://youtu.be/EH8uomhD2r8.
+- [x] TypeScript SDK for other builders (`sdk/`, 10 unit tests, live smoke test passed 21 Nov 2026 on a fresh vault).
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack, a roadmap footnote, not an integration claim).
 - No EIP-3009 gasless path: the deployed tUSD8 has no `receiveWithAuthorization`/`transferWithAuthorization` (verified 18 Nov 2026), so no gasless flow via the token is possible. The core vault works without any relayer. EIP-2612 `permit` is present on the token if a signed-approval flow is ever wanted.
