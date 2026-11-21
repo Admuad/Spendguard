@@ -9,7 +9,9 @@ Aevum has no session-key tooling yet: the official SDK ships in Q1 2027, and no 
 Spending authority becomes a grantable, revocable, auditable object, not a shared wallet key.
 
 - **Track:** Decentralized Payments, with the Native AI Assistants angle as the innovation story (an autonomous agent pays merchants within bounds while the owner watches the audit trail).
-- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md)). Demo video v5 (2m43s) is live on the demo site, playable from Watch Demo; the submission package follows in the build window (see [Roadmap](#roadmap)).
+- **Status:** contracts + factory + demo agent + full test suite (56 green) + testnet deployment + UI complete and verified (see [ui/VERIFICATION.md](ui/VERIFICATION.md)). Demo video (1m37s, light mode, real on-chain grant, pay, revoke, sweep) is on YouTube: https://youtu.be/EH8uomhD2r8, and plays from Watch Demo on the demo site.
+- **Author:** built by Muhammed Adediran ([@Admuad](https://github.com/Admuad)), solo, for the Aevum Builder Challenge #1.
+- **Deployed commit:** https://github.com/Admuad/Spendguard/commit/50f965104559c26e61c95713a1ca0f7c3c29de37 (main; this commit deployed the contracts and the live site).
 - **Live demo:** https://admuad.github.io/Spendguard/ (static export of `ui/`, deployed to the `gh-pages` branch; source of truth is `main`).
 - **Brand:** logo, colors, typography, and usage rules in [BRANDING.md](BRANDING.md).
 
@@ -206,7 +208,7 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
 - [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
-- Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes).
+- [x] Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes): https://youtu.be/EH8uomhD2r8.
 - Multisig owner / timelocked large grants.
 - Migration to native ERC-4337 session keys when QDay publishes bundler, factory, and paymaster details (EntryPoint v0.7 is deployed on 44005 but undocumented and unusable without the rest of the stack, a roadmap footnote, not an integration claim).
 - No EIP-3009 gasless path: the deployed tUSD8 has no `receiveWithAuthorization`/`transferWithAuthorization` (verified 18 Nov 2026), so no gasless flow via the token is possible. The core vault works without any relayer. EIP-2612 `permit` is present on the token if a signed-approval flow is ever wanted.
@@ -214,3 +216,7 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Credits
+
+Built by Muhammed Adediran. The contracts and UI are original work. Third-party dependencies: OpenZeppelin Contracts (MIT) for the ERC20 interface, ReentrancyGuard, and Ownable; Foundry for testing; Next.js, wagmi, and viem for the UI. No Aevum Starter Kit code was reused.
