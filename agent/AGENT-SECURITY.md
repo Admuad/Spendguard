@@ -290,7 +290,7 @@ upgrade should be a deliberate, reviewed change.
 ## Verification performed
 
 - `npm install` succeeds; viem 2.58.0 installed (satisfies ^2.57.12).
-- Test suite: 88 tests, 88 passing, 0 failing, across 7 files. The suite
+- Test suite: 66 tests, 66 passing, 0 failing, across 7 files. The suite
   sends no transactions. It includes a read-only matrix against the live
   Aevum testnet using the known session addresses: the live demo key passes
   a valid intent and refuses over-cap and non-allowlisted intents; the

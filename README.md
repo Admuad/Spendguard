@@ -204,7 +204,7 @@ The vault is a single self-contained contract plus standard OpenZeppelin depende
 ## Roadmap
 
 - [x] Testnet deployment (18 Nov 2026) + UI (grant / pay / revoke / pause / sweep + session list with spent-vs-cap bars + audit-trail view), verified at desktop and mobile widths.
-- [x] Demo agent script holding only a session key (`agent/`, 88 tests, live-run proven 18 Nov 2026).
+- [x] Demo agent script holding only a session key (`agent/`, 66 tests, live-run proven 18 Nov 2026).
 - [x] Factory: one vault per user (`SpendGuardFactory`, deployed 18 Nov 2026, 12 isolation tests).
 - Demo video against the live deployment (over-cap revert, revoke, and pause shown on camera with tx hashes).
 - Multisig owner / timelocked large grants.

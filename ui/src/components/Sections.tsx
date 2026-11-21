@@ -89,8 +89,8 @@ export function About() {
           <Reveal delay={160}>
             <div className="about-stat">
               <span className="about-stat-value">
-                <CountUp value={30} />
-                /30
+                <CountUp value={56} />
+                /56
               </span>
               <span className="about-stat-label">
                 Foundry tests passing, including 15 scripted adversarial
