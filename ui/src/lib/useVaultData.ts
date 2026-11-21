@@ -11,7 +11,7 @@ import {
   readClient,
   spendGuardAbi,
 } from "./config";
-import { cachedLogToLog, fetchDemoVaultSeed, readVaultLogCache, writeVaultLogCache } from "./vaultCache";
+import { cachedLogToLog, fetchDemoVaultSeed, readVaultLogCache, resolveVaultCreationBlock, writeVaultLogCache } from "./vaultCache";
 
 /** One decoded vault event, newest first in the activity list. */
 export type VaultActivity =
@@ -317,9 +317,16 @@ export function useVaultData(
         }
       }
 
-      const from = scannedThroughRef.current === null
-        ? fromBlock
-        : scannedThroughRef.current + 1n;
+      let from: bigint;
+      if (scannedThroughRef.current !== null) {
+        from = scannedThroughRef.current + 1n;
+      } else {
+        // Cold start with no cache and no seed (a user vault): start from
+        // the vault's own creation block instead of the factory deploy
+        // block, so a vault created today scans a few blocks, not ~255k.
+        const created = await resolveVaultCreationBlock(vaultAddress);
+        from = created !== null && created > fromBlock ? created : fromBlock;
+      }
       if (from <= latest) {
         const logs = await getLogsChunked(from, latest, vaultAddress);
         if (stale()) return;

@@ -1,4 +1,5 @@
 import type { Log } from "viem";
+import { EXPLORER_URL, readClient } from "./config";
 import { BASE_PATH } from "./site";
 
 /**
@@ -132,6 +133,63 @@ export async function fetchDemoVaultSeed(
       return null;
     }
     return parsed;
+  } catch {
+    return null;
+  }
+}
+
+const CREATED_PREFIX = "spendguard-vault-created-v1:";
+
+/** The block a vault was created in, when already known on this device. */
+export function readVaultCreationBlock(vault: `0x${string}`): bigint | null {
+  try {
+    const raw = localStorage.getItem(CREATED_PREFIX + vault.toLowerCase());
+    if (!raw) return null;
+    const n = BigInt(raw);
+    return n > 0n ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeVaultCreationBlock(vault: `0x${string}`, block: bigint): void {
+  try {
+    localStorage.setItem(CREATED_PREFIX + vault.toLowerCase(), block.toString());
+  } catch {
+    // Storage unavailable: the app keeps working, it just re-resolves.
+  }
+}
+
+/**
+ * The block a vault was created in, so a first load can scan from there
+ * instead of the factory deploy block. A vault created today has only a
+ * few blocks of history, so this turns a ~255k-block cold scan into a
+ * handful of calls. Resolved from the explorer (one fast address lookup
+ * for the creation transaction, then one receipt read for its block) and
+ * cached on this device, so it is paid once per vault. Returns null when
+ * the explorer or the receipt cannot be read, and the caller falls back
+ * to scanning from the factory deploy block.
+ */
+export async function resolveVaultCreationBlock(
+  vault: `0x${string}`,
+): Promise<bigint | null> {
+  const stored = readVaultCreationBlock(vault);
+  if (stored !== null) return stored;
+  try {
+    const res = await fetch(`${EXPLORER_URL}/api/v2/addresses/${vault}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { creation_transaction_hash?: unknown };
+    const txHash = data.creation_transaction_hash;
+    if (typeof txHash !== "string" || !txHash.startsWith("0x")) return null;
+    const receipt = await readClient.getTransactionReceipt({
+      hash: txHash as `0x${string}`,
+    });
+    const block = receipt.blockNumber;
+    if (block > 0n) {
+      writeVaultCreationBlock(vault, block);
+      return block;
+    }
+    return null;
   } catch {
     return null;
   }
