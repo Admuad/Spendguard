@@ -5,6 +5,16 @@ scoped session key. It is the "agent" in the SpendGuard story: a bot, a
 cashier script, or an AI assistant that holds a bounded key, not the vault,
 not the owner key.
 
+## The SpendGuard skill (for your AI agent)
+
+If you have an AI agent, you do not need to read this README to use
+SpendGuard. Tell your agent to install the SpendGuard skill from
+`SKILL.md` in this folder. Within a minute it understands everything
+about SpendGuard: the SDK, the contracts, the session model, the web app,
+the demo agent, and the do and do not list, and it is ready to use it.
+That is the pitch: no setup guide to read, no docs to study, just install
+the skill and the agent is ready.
+
 The agent never holds the owner key. It cannot grant, revoke, pause,
 deposit, or sweep. The only contract call it can make is `executePayment`,
 and the contract enforces the session bounds on-chain even if this script
