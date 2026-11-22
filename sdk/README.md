@@ -93,7 +93,7 @@ The owner can revoke a key instantly, edit a live key's bounds without resetting
 
 - Chain 44005, RPC `https://rpc-test.qday.info` (HTTPS only, no WebSocket).
 - tUSD8 `0x456569838f1d43009A91ebA4263147Afd7233483`, 6 decimals.
-- Explorer verification does not work on Aevum yet; the deployed addresses and the exact commit are in the repo README instead.
+- Explorer verification works on Aevum now. Both SpendGuard contracts are verified (22 Nov 2026, forge verify-contract, Blockscout verifier); the deployed addresses and the exact commit are in the repo README.
 - There is no officially supported bundler or paymaster for this challenge, and account abstraction is not required. This SDK uses a normal wallet plus tUSD8 payments.
 - Test tokens only. Never use a mainnet key with this SDK.
 

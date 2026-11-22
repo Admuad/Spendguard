@@ -189,7 +189,7 @@ test.
 | V-5 | How to obtain tUSD8 | CLOSED — web faucet (1 tUSD8/claim, 24h cooldown) + Discord #faucet (once per person). |
 | V-6 | Starter-kit contents | ANSWERED as far as public sources allow — kit repo is public (qday-io/aevum-starter-kit); no session-key code exists in it. |
 | V-7 | Session-key / AA / x402 tooling live on 44005 | ANSWERED as far as public sources allow — announced live, no usable addresses/endpoints/SDK. DIY is the only shippable approach. EntryPoint v0.7 is deployed but undocumented; roadmap footnote only. |
-| V-8 | Kit-imposed constraints | CLOSED — five gotchas adopted (Shanghai EVM, 1,000-block log chunks, no WebSocket, no explorer verification, on-Aevum activity only). |
+| V-8 | Kit-imposed constraints | CLOSED — four gotchas adopted (Shanghai EVM, 1,000-block log chunks, no WebSocket, on-Aevum activity only). The fifth, no explorer verification, no longer applies: verification works now (22 Nov 2026, forge verify-contract with the Blockscout verifier) and both SpendGuard contracts are verified. |
 | V-9 | Foundry → Aevum deploy toolchain | CLOSED — live deploy pipeline proven (throwaway contract, pre-window; not submission evidence). |
 | V-10 | tQDAY faucet for the testnet wallet | CLOSED — wallet funded. |
 | V-11 | DoraHacks registration requirements | CLOSED — registered 18 Nov 2026. |

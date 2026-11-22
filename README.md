@@ -166,7 +166,7 @@ forge script script/DeployFactory.s.sol \
 A standalone vault (without the factory) deploys the same way with
 `script/Deploy.s.sol`; the deployer becomes its owner.
 
-`--legacy` is deliberate: some tooling mishandles EIP-1559 fields on this chain (starter-kit docs). No contract verification step exists on the explorer yet. Submission evidence is this repo plus deployment addresses and transaction hashes.
+`--legacy` is deliberate: some tooling mishandles EIP-1559 fields on this chain (starter-kit docs). Both contracts are verified on the explorer (22 Nov 2026, `forge verify-contract` with the Blockscout verifier, solc 0.8.24, EVM shanghai, optimizer 200 runs): factory `0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE` and demo vault `0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`, both "Pass - Verified". Submission evidence is this repo plus deployment addresses, transaction hashes, and the verified source on the explorer.
 
 ### Build constraints that matter on Aevum
 

@@ -178,7 +178,7 @@
 
 - Never claim mainnet. SpendGuard runs on the Aevum testnet only, chain 44005.
 
-- Never claim a contract is verified on the explorer. Aevum explorer verification is broken. Put the addresses and the exact commit in the README instead.
+- Both SpendGuard contracts ARE verified on the explorer (22 Nov 2026, forge verify-contract, Blockscout verifier, solc 0.8.24). Say so plainly, with the addresses and the exact commit in the README. Never claim a contract is verified that is not.
 
 - Never install a `qday-*` npm package before Q1 2027.
 
