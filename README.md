@@ -147,7 +147,7 @@ Copy `.env.example` to `.env` (gitignored) and fill it in. Deploy scripts read t
 | tUSD8 (6 decimals) | [`0x456569838f1d43009A91ebA4263147Afd7233483`](https://explorer-test.qday.info/token/0x456569838f1d43009A91ebA4263147Afd7233483) |
 | RPC | `https://rpc-test.qday.info` |
 | Explorer | `https://explorer-test.qday.info` |
-| Demo vault (homepage) | [`0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`](https://explorer-test.qday.info/address/0x048a64225419C11C9Ff0CB39aA925902c5e965Ac) (funded 3.00 tUSD8) |
+| Demo vault (homepage) | [`0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`](https://explorer-test.qday.info/address/0x048a64225419C11C9Ff0CB39aA925902c5e965Ac) (funded 3.00 tUSD8; 0.10 spent by the LLM agent's live payment, balance 2.90) |
 | SpendGuard factory | [`0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE`](https://explorer-test.qday.info/address/0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE) |
 | Factory deploy tx | [`0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a`](https://explorer-test.qday.info/tx/0x0fde8f6137cd22e71943f91ea110b40c11f5cf6545f88ced29193ff5df276e3a) (18 Nov 2026, deployer `0xE5e31bAB0976A568f009980Ed1da2B6A56D8D898`) |
 | First factory vault | [`0x048a64225419C11C9Ff0CB39aA925902c5e965Ac`](https://explorer-test.qday.info/address/0x048a64225419C11C9Ff0CB39aA925902c5e965Ac) (the demo vault, created by the deployer wallet; a second vault owned by another address verified isolation live) |

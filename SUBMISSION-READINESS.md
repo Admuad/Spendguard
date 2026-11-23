@@ -18,7 +18,7 @@ Verdict scale: MET (evidence in hand) / MOSTLY MET (works, one gap) / GAP.
 | Public GitHub repo, commits in-window | MET | Admuad/Spendguard, public, created 18 Nov 2026 03:15 UTC (cutoff: 16 Nov 06:00 UTC). All commits 18 Nov. Default branch main, MIT licence. Logged-out page check: HTTP 200, 18 Nov. |
 | Aevum integration evidence | MET | Demo vault 0x048a64225419C11C9Ff0CB39aA925902c5e965Ac + factory 0x3BD7Ffda8504124fb7aE9e28DCA0D01aA5A728EE on chain 44005 (second deployment: editSession build; the first deployment, vault 0x9a11… + factory 0x54c6…, was swept and retired), deploy tx + E2E + isolation + agent-run + live edit hashes recorded (see research_notes/spendguard-*-2026-11-18.md). Both contracts are verified on the explorer (22 Nov 2026, "Pass - Verified" via forge verify-contract, Blockscout verifier); evidence is repo + addresses + hashes + verified source. |
 | Live deployment | MET | https://admuad.github.io/Spendguard/ live, real chain data, factory UI verified 390px + 1440px. |
-| Demo video, 2–3 min, login-free link | MET | Video v5 is ~2:43, professional cut, captions, voiceover, factory + agent beats, hosted on the project's own Pages site at https://admuad.github.io/Spendguard/spendguard-demo-v5-web.mp4 and verified playing live through the Watch Demo button (6/6 checks). Note: the video shows the first demo vault and says 42 tests; the current suite is 56. |
+| Demo video, 2–3 min, login-free link | MET | Video v11 is 1m55s, professional cut, captions, voiceover, factory + agent beats plus a real failure-mode segment (over-cap revert and revoked-key refusal, both with tx hashes), hosted on the project's own Pages site at https://admuad.github.io/Spendguard/spendguard-demo.mp4 and on YouTube (unlisted) at https://youtu.be/ZwRmUPXpKJ8, verified playing live through the Watch Demo button. Shows the current demo vault and says 56 tests. |
 | Project documentation | MET | README (problem, architecture, workflows, tech, addresses, env specs, repro steps, Try it, roadmap), ARCHITECTURE.md, THREAT-MODEL.md v2.3, BRANDING.md, ui/VERIFICATION.md, agent/README.md, agent/AGENT-SECURITY.md. |
 | No malicious code | MET | Nothing in the repo attacks the platform or other participants. |
 | Build-fresh, testnet-only, test tokens only | MET | All code + deploys after the cutoff. Chain 44005 only. No tokens issued or promised (stated on the page and in the README). The 10 Nov ThrowawayCounter deploy predates the window and is NOT submission evidence. |
@@ -31,8 +31,8 @@ Verdict scale: MET (evidence in hand) / MOSTLY MET (works, one gap) / GAP.
 - Gap: wallet WRITE flows never click-tested with a real wallet (mock-wallet proof only; needs Muhammed's live click-through). Watch Demo now plays the hosted video.
 
 ### C2. Demo, clear and well-structured — 10 — MOSTLY MET
-- Video v5: well-paced walkthrough of the core flow with real on-chain proof (0.25 paid, vault 2.65, activity feed with tx hashes), the factory flow (create + switch vaults), the revoke pop-up, and the agent-script beat (real test output, 88/88); explorer links throughout the UI.
-- Gaps: (1) the video shows the retired first demo vault and says 42 tests (now 56); a re-render is a nice-to-have, not a blocker. (2) The brief's C2 ideal includes on-camera edge cases (over-cap / non-allowlist / post-revoke reverts). Reverts were proven on-chain but are not in the video.
+- Video v11: well-paced walkthrough of the core flow with real on-chain proof (3.00 deposited, grant cap 1.00, 0.10 paid by the LLM agent, vault 2.90, activity feed with tx hashes), the factory flow (create + switch vaults), the revoke pop-up, the LLM agent beat (live 0.10 payment, tx 0x96da9c30a0fa510bb57a04f1054e044dd8430b1b8e7c5369a233cb65925b71a4), and a failure-mode segment (over-cap CapExceeded revert and revoked-key SessionNotActive refusal, both with tx hashes); explorer links throughout the UI.
+- Gaps: v11 shows the current demo vault, says 56 tests, and includes the over-cap and revoked-key reverts on camera with tx hashes. The non-allowlist revert is proven on-chain but not in the video; a nice-to-have, not a blocker.
 
 ### C3. Comprehensive documentation — 10 — STRONG
 - README + ARCHITECTURE.md (flows, API examples, constraints, roadmap) + THREAT-MODEL.md v2.3 (19 invariants incl. INV-18 vault isolation and INV-19 edit semantics, 12 fuzz properties, 15 adversarial tests, accepted risks R-1..R-11 incl. pooled deposits within one vault) + BRANDING.md + VERIFICATION.md + agent README + AGENT-SECURITY.md (10 threats, controls, residual risks).
@@ -101,9 +101,7 @@ Verdict scale: MET (evidence in hand) / MOSTLY MET (works, one gap) / GAP.
 ## Pre-submit action list
 
 Must-do:
-1. Host video v5 (GitHub Release for the modal; YouTube unlisted for the
-   form), set DEMO_VIDEO_URL, redeploy, verify the modal plays. Blocked
-   on Muhammed's go-ahead for the public release.
+1. Video v11 hosted on the site and on YouTube (unlisted, https://youtu.be/ZwRmUPXpKJ8); DEMO_VIDEO_URL set, modal verified playing. Done 21 Nov 2026.
 2. Muhammed's live click-through of the write flows on the real site.
 3. Fresh session grant near submission so judges see a live session
    (the demo session expires 19 Nov ~07:03 WAT; the vault balance stays).
